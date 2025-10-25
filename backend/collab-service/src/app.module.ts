@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CollabGateway } from './collab/collab.gateway';
+import { HealthController } from './health/health.controller';
 import { CollabModule } from './collab/collab.module';
 import { ConfigModule } from '@nestjs/config';
 
@@ -12,7 +12,7 @@ import { ConfigModule } from '@nestjs/config';
     }),
     CollabModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}
