@@ -44,10 +44,10 @@ export class CollabGateway {
       client.data.sessionId = sessionId;
 
       // join room based on sessionId
-      client.join('session:' + sessionId);
+      await client.join('session:' + sessionId);
 
       // send current doc state to the client
-      const state = this.collab.encodeCurrentState(sessionId);
+      const state = await this.collab.encodeCurrentState(sessionId);
       client.emit('collab:state', state);
 
       // small emit to confirm connection
@@ -79,7 +79,7 @@ export class CollabGateway {
   }
 
   @SubscribeMessage('collab:update')
-  handleStateUpdate(
+  async handleStateUpdate(
     @ConnectedSocket() client: Socket,
     @MessageBody() updateData: unknown,
   ) {
@@ -91,7 +91,7 @@ export class CollabGateway {
     const update = toUint8(updateData);
 
     // apply to server doc
-    this.collab.applyUpdateToSession(sessionId, update);
+    await this.collab.applyAndPersistUpdate(sessionId, update);
 
     // broadcast to other clients in the same session
     client.to('session:' + sessionId).emit('collab:update', update);
