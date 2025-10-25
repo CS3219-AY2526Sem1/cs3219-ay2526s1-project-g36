@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# Database
+/collab-level-db
+
 # Logs
 logs
 *.log
