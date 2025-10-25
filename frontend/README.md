@@ -36,6 +36,18 @@ pnpm install
 bun install
 ```
 
+# Environment Variables
+Create a new file named .env in the `frontend/` directory.
+This file stores environment variables needed to connect to Supabase.
+
+```bash
+# public anon key of supabase instance
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpb2psbWliaGNjdGducHJpZXpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyMjQ2MzgsImV4cCI6MjA3NDgwMDYzOH0.2JeHLKykb5y2EQsSVnNJec-vz3ybQgY94KasZa9OfIM"
+
+# public url of supabase instance
+NEXT_PUBLIC_SUPABASE_URL = "https://diojlmibhcctgnpriezo.supabase.co"
+```
+
 # Running the Development Server
 Start the local dev server with the following command
 ```bash
