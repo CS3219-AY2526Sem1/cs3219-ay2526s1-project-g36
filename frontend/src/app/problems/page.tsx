@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import TopNavBar from "../components/navbar/TopNavBar";
 
 export default function ProblemsPage() {
   return (
+    <>
+    <TopNavBar />
     <main className="p-8">
       <h1 className="text-3xl font-bold mb-4">Problem Database</h1>
       <p className="text-gray-700 mb-6">
@@ -29,5 +32,6 @@ export default function ProblemsPage() {
         Join Collaboration Room
       </Link>
     </main>
+    </>
   );
 }
