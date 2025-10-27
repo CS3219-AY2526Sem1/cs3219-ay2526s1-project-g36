@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { mockCheckLogin } from "../../../../lib/mockApi";
 import { checkLogin } from "../../../../lib/auth";
 import LoginButton from "./LoginButton";
 import LogoutButton from "./LogoutButton";
