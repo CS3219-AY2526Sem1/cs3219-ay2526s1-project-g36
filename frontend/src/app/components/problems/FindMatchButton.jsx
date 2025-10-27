@@ -17,7 +17,7 @@ export default function FindMatchButton({ problem }) {
   return (
     <button
       onClick={handleFindMatch}
-      className="w-full py-2 px-4 rounded-lg font-semibold transition"
+      className="w-full py-2 px-4 rounded-lg font-semibold transition cursor-pointer"
       style={{
         backgroundColor: theme.primary,
         color: theme.background,
