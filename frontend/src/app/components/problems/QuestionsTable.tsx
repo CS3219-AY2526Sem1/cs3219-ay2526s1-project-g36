@@ -1,32 +1,29 @@
 "use client";
 
 import { Question } from "../../../../lib/mockApi";
-import { useTheme } from "../../../../context/ThemeContext";
-import QuestionRow from "./Question";
+import QuestionRow from "./QuestionRow";
 
 interface Props {
   questions: Question[];
+  onSelect: (question: Question) => void;
 }
 
-export default function QuestionsTable({ questions }: Props) {
-  const { theme } = useTheme();
-
+export default function QuestionsTable({ questions, onSelect }: Props) {
   return (
-    <table className="w-full border-collapse text-sm">
-      <thead style={{ backgroundColor: theme.surface }}>
+    <table className="w-full text-left border-collapse">
+      <thead>
         <tr>
-          <th className="p-3 text-left">#</th>
-          <th className="p-3 text-left">Name</th>
-          <th className="p-3 text-left">Difficulty</th>
-          <th className="p-3 text-left">Acceptance</th>
-          <th className="p-3 text-left">Data Structure</th>
-          <th className="p-3 text-left">Topic</th>
+          <th className="p-3">#</th>
+          <th className="p-3">Name</th>
+          <th className="p-3">Difficulty</th>
+          <th className="p-3">Acceptance</th>
+          <th className="p-3">Data Structures</th>
+          <th className="p-3">Topic</th>
         </tr>
       </thead>
-
       <tbody>
         {questions.map((q, i) => (
-          <QuestionRow key={q.id} question={q} index={i} />
+          <QuestionRow key={q.id} question={q} index={i} onSelect={onSelect} />
         ))}
       </tbody>
     </table>

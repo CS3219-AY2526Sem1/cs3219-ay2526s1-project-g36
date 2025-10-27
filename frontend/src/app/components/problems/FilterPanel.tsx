@@ -1,90 +1,149 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Question } from "../../../../lib/mockApi";
-import QuestionsTable from "./QuestionsTable";
 import { useTheme } from "../../../../context/ThemeContext";
+import QuestionsTable from "./QuestionsTable";
 
 interface Props {
   questions: Question[];
+  onSelectProblem: (question: Question) => void;
 }
 
-export default function FilterPanel({ questions }: Props) {
-  const [difficulty, setDifficulty] = useState<string>("all");
-  const [topic, setTopic] = useState<string>("all");
-  const [difficultyFocused, setDifficultyFocused] = useState(false);
-  const [topicFocused, setTopicFocused] = useState(false);
+type SortDirection = "asc" | "desc" | null;
+
+interface SortState {
+  field: "difficulty" | "acceptanceRate";
+  direction: SortDirection;
+}
+
+export default function FilterPanel({ questions, onSelectProblem }: Props) {
   const { theme } = useTheme();
 
-  // Extract unique values dynamically
-  const difficulties = [
-    "all",
-    ...Array.from(new Set(questions.map(q => q.difficulty.toLowerCase()))),
-  ];
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [sorts, setSorts] = useState<SortState[]>([]);
 
-  const topics = [
-    "all",
-    ...Array.from(new Set(questions.map(q => q.topicType.toLowerCase()))),
-  ];
+  // Extract unique topics
+  const topics = useMemo(() => {
+    const unique = new Set(questions.map((q) => q.topic));
+    return Array.from(unique);
+  }, [questions]);
 
-  // Filter logic
-  const filteredQuestions = questions.filter((q) => {
-    const matchesDifficulty =
-      difficulty === "all" || q.difficulty.toLowerCase() === difficulty;
-    const matchesTopic = topic === "all" || q.topicType.toLowerCase() === topic;
-    return matchesDifficulty && matchesTopic;
-  });
+  const toggleSort = (field: "difficulty" | "acceptanceRate") => {
+    setSorts((prev) => {
+      const existing = prev.find((s) => s.field === field);
+      let newDirection: SortDirection;
+
+      if (!existing) newDirection = "asc";
+      else if (existing.direction === "asc") newDirection = "desc";
+      else if (existing.direction === "desc") newDirection = null;
+      else newDirection = "asc";
+
+      const filtered = prev.filter((s) => s.field !== field);
+
+      return newDirection
+        ? [{ field, direction: newDirection }, ...filtered]
+        : filtered;
+    });
+  };
+
+  const filteredAndSortedQuestions = useMemo(() => {
+    let result = [...questions];
+
+    if (selectedTopic) {
+      result = result.filter((q) => q.topic === selectedTopic);
+    }
+
+    const diffOrder = ["easy", "medium", "hard"];
+    [...sorts].reverse().forEach((sort) => {
+      if (sort.field === "difficulty") {
+        result.sort((a, b) => {
+          const aIdx = diffOrder.indexOf(a.difficulty.toLowerCase());
+          const bIdx = diffOrder.indexOf(b.difficulty.toLowerCase());
+          return sort.direction === "asc" ? aIdx - bIdx : bIdx - aIdx;
+        });
+      } else if (sort.field === "acceptanceRate") {
+        result.sort((a, b) =>
+          sort.direction === "asc"
+            ? a.acceptanceRate - b.acceptanceRate
+            : b.acceptanceRate - a.acceptanceRate
+        );
+      }
+    });
+
+    return result;
+  }, [questions, selectedTopic, sorts]);
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Filter Controls */}
-      <div className="flex gap-4">
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex items-center gap-4 flex-wrap">
+        {/* Topic dropdown */}
         <select
-          value={difficulty}
-          onChange={(e) => setDifficulty(e.target.value)}
-          className="border rounded-lg p-2 shadow-sm focus:outline-none"
-          onFocus={() => setDifficultyFocused(true)}
-          onBlur={() => setDifficultyFocused(false)}
+          value={selectedTopic || ""}
+          onChange={(e) => setSelectedTopic(e.target.value || null)}
+          className="border rounded-lg p-2 bg-gray-50 dark:bg-gray-800 shadow-sm focus:outline-none"
           style={{
-            backgroundColor: theme.input.background,
-            color: theme.input.text,
-            borderColor: theme.input.border,
-            boxShadow: difficultyFocused ? `0 0 0 3px ${theme.input.focusBorder}33` : undefined,
+            borderColor: theme.border,
+            color: theme.text,
+            cursor: "default",
           }}
         >
-          {difficulties.map((d) => (
-            <option key={d} value={d}>
-              {d.charAt(0).toUpperCase() + d.slice(1)}
+          <option value="">All Topics</option>
+          {topics.map((topic) => (
+            <option key={topic} value={topic}>
+              {topic.charAt(0).toUpperCase() + topic.slice(1)}
             </option>
           ))}
         </select>
 
-        <select
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          className="border rounded-lg p-2 shadow-sm focus:outline-none"
-          onFocus={() => setTopicFocused(true)}
-          onBlur={() => setTopicFocused(false)}
+        <button
+          onClick={() => toggleSort("difficulty")}
+          className="px-3 py-2 rounded-lg font-medium transition"
           style={{
-            backgroundColor: theme.input.background,
-            color: theme.input.text,
-            borderColor: theme.input.border,
-            boxShadow: topicFocused ? `0 0 0 3px ${theme.input.focusBorder}33` : undefined,
+            backgroundColor: sorts.find((s) => s.field === "difficulty")
+              ? theme.primary
+              : "transparent",
+            border: `1px solid ${theme.border}`,
+            color: theme.text,
+            cursor: "pointer",
           }}
         >
-          {topics.map((t) => (
-            <option key={t} value={t}>
-              {t
-                .split(" ")
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" ")}
-            </option>
-          ))}
-        </select>
+          Sort by Difficulty{" "}
+          {sorts.find((s) => s.field === "difficulty")?.direction === "asc"
+            ? "↑"
+            : sorts.find((s) => s.field === "difficulty")?.direction === "desc"
+            ? "↓"
+            : ""}
+        </button>
+
+        <button
+          onClick={() => toggleSort("acceptanceRate")}
+          className="px-3 py-2 rounded-lg font-medium transition"
+          style={{
+            backgroundColor: sorts.find((s) => s.field === "acceptanceRate")
+              ? theme.primary
+              : "transparent",
+            border: `1px solid ${theme.border}`,
+            color: theme.text,
+            cursor: "pointer",
+          }}
+        >
+          Sort by Acceptance{" "}
+          {sorts.find((s) => s.field === "acceptanceRate")?.direction === "asc"
+            ? "↑"
+            : sorts.find((s) => s.field === "acceptanceRate")?.direction ===
+              "desc"
+            ? "↓"
+            : ""}
+        </button>
       </div>
 
-      {/* Render Table */}
-      <QuestionsTable questions={filteredQuestions} />
+      {/* Table */}
+      <QuestionsTable
+        questions={filteredAndSortedQuestions}
+        onSelect={onSelectProblem}
+      />
     </div>
   );
 }

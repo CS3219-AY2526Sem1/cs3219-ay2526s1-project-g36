@@ -6,7 +6,7 @@
     "difficulty": "medium",
     "acceptanceRate": 45.52,
     "dataStructures": ["set", "trie", "string"],
-    "topicType": "system design"
+    "topic": "system design"
   },
   {
     "id": 2,
@@ -15,7 +15,7 @@
     "difficulty": "medium",
     "acceptanceRate": 42.11,
     "dataStructures": ["graph", "set", "hashmap"],
-    "topicType": "system design"
+    "topic": "system design"
   },
   {
     "id": 3,
@@ -24,7 +24,7 @@
     "difficulty": "easy",
     "acceptanceRate": 60.74,
     "dataStructures": ["trie", "priority queue", "string"],
-    "topicType": "system design"
+    "topic": "system design"
   },
   {
     "id": 4,
@@ -33,7 +33,7 @@
     "difficulty": "easy",
     "acceptanceRate": 78.3,
     "dataStructures": ["set", "string"],
-    "topicType": "string manipulation"
+    "topic": "string manipulation"
   },
   {
     "id": 5,
@@ -42,7 +42,7 @@
     "difficulty": "hard",
     "acceptanceRate": 31.22,
     "dataStructures": ["graph", "queue", "set"],
-    "topicType": "graph theory"
+    "topic": "graph theory"
   },
   {
     "id": 6,
@@ -51,7 +51,7 @@
     "difficulty": "medium",
     "acceptanceRate": 55.1,
     "dataStructures": ["heap", "hashmap", "array"],
-    "topicType": "data analysis"
+    "topic": "data analysis"
   },
   {
     "id": 7,
@@ -60,7 +60,7 @@
     "difficulty": "medium",
     "acceptanceRate": 40.24,
     "dataStructures": ["linked list", "hashmap"],
-    "topicType": "system design"
+    "topic": "system design"
   },
   {
     "id": 8,
@@ -69,7 +69,7 @@
     "difficulty": "medium",
     "acceptanceRate": 59.18,
     "dataStructures": ["array", "sorting"],
-    "topicType": "interval problems"
+    "topic": "interval problems"
   },
   {
     "id": 9,
@@ -78,7 +78,7 @@
     "difficulty": "medium",
     "acceptanceRate": 48.67,
     "dataStructures": ["heap", "array"],
-    "topicType": "stream processing"
+    "topic": "stream processing"
   },
   {
     "id": 10,
@@ -87,7 +87,7 @@
     "difficulty": "medium",
     "acceptanceRate": 65.42,
     "dataStructures": ["string", "hashmap"],
-    "topicType": "string manipulation"
+    "topic": "string manipulation"
   },
   {
     "id": 11,
@@ -96,7 +96,7 @@
     "difficulty": "medium",
     "acceptanceRate": 63.78,
     "dataStructures": ["queue", "tree"],
-    "topicType": "tree traversal"
+    "topic": "tree traversal"
   },
   {
     "id": 12,
@@ -105,7 +105,7 @@
     "difficulty": "easy",
     "acceptanceRate": 85.3,
     "dataStructures": ["stack", "string"],
-    "topicType": "string validation"
+    "topic": "string validation"
   },
   {
     "id": 13,
@@ -114,7 +114,7 @@
     "difficulty": "medium",
     "acceptanceRate": 56.44,
     "dataStructures": ["graph", "queue"],
-    "topicType": "graph theory"
+    "topic": "graph theory"
   },
   {
     "id": 14,
@@ -123,7 +123,7 @@
     "difficulty": "medium",
     "acceptanceRate": 35.2,
     "dataStructures": ["hashmap", "heap"],
-    "topicType": "system design"
+    "topic": "system design"
   },
   {
     "id": 15,
@@ -132,7 +132,7 @@
     "difficulty": "hard",
     "acceptanceRate": 40.56,
     "dataStructures": ["heap", "queue"],
-    "topicType": "stream processing"
+    "topic": "stream processing"
   },
   {
     "id": 16,
@@ -141,7 +141,7 @@
     "difficulty": "medium",
     "acceptanceRate": 51.18,
     "dataStructures": ["array", "hashmap"],
-    "topicType": "array sum"
+    "topic": "array sum"
   },
   {
     "id": 17,
@@ -150,7 +150,7 @@
     "difficulty": "easy",
     "acceptanceRate": 75.24,
     "dataStructures": ["array", "linked list"],
-    "topicType": "system design"
+    "topic": "system design"
   },
   {
     "id": 18,
@@ -159,7 +159,7 @@
     "difficulty": "medium",
     "acceptanceRate": 47.61,
     "dataStructures": ["graph", "hashmap"],
-    "topicType": "graph theory"
+    "topic": "graph theory"
   },
   {
     "id": 19,
@@ -168,7 +168,7 @@
     "difficulty": "medium",
     "acceptanceRate": 64.19,
     "dataStructures": ["graph", "matrix"],
-    "topicType": "graph traversal"
+    "topic": "graph traversal"
   },
   {
     "id": 20,
@@ -177,7 +177,7 @@
     "difficulty": "medium",
     "acceptanceRate": 56.9,
     "dataStructures": ["trie", "array", "string"],
-    "topicType": "system design"
+    "topic": "system design"
   },
   {
     "id": 21,
@@ -186,7 +186,7 @@
     "difficulty": "easy",
     "acceptanceRate": 89.4,
     "dataStructures": ["array", "hashmap"],
-    "topicType": "array sum"
+    "topic": "array sum"
   },
   {
     "id": 22,
@@ -195,7 +195,7 @@
     "difficulty": "medium",
     "acceptanceRate": 67.4,
     "dataStructures": ["tree", "stack"],
-    "topicType": "tree traversal"
+    "topic": "tree traversal"
   },
   {
     "id": 23,
@@ -204,7 +204,7 @@
     "difficulty": "easy",
     "acceptanceRate": 71.3,
     "dataStructures": ["string", "sorting"],
-    "topicType": "string manipulation"
+    "topic": "string manipulation"
   },
   {
     "id": 24,
@@ -213,7 +213,7 @@
     "difficulty": "medium",
     "acceptanceRate": 59.2,
     "dataStructures": ["heap", "array"],
-    "topicType": "interval problems"
+    "topic": "interval problems"
   },
   {
     "id": 25,
@@ -222,7 +222,7 @@
     "difficulty": "easy",
     "acceptanceRate": 88.2,
     "dataStructures": ["linked list"],
-    "topicType": "linked list operations"
+    "topic": "linked list operations"
   },
   {
     "id": 26,
@@ -231,7 +231,7 @@
     "difficulty": "easy",
     "acceptanceRate": 84.9,
     "dataStructures": ["stack", "queue"],
-    "topicType": "system design"
+    "topic": "system design"
   },
   {
     "id": 27,
@@ -240,7 +240,7 @@
     "difficulty": "hard",
     "acceptanceRate": 39.6,
     "dataStructures": ["string", "hashmap"],
-    "topicType": "sliding window"
+    "topic": "sliding window"
   },
   {
     "id": 28,
@@ -249,7 +249,7 @@
     "difficulty": "medium",
     "acceptanceRate": 56.3,
     "dataStructures": ["linked list"],
-    "topicType": "linked list operations"
+    "topic": "linked list operations"
   },
   {
     "id": 29,
@@ -258,7 +258,7 @@
     "difficulty": "medium",
     "acceptanceRate": 72.5,
     "dataStructures": ["matrix", "set"],
-    "topicType": "grid validation"
+    "topic": "grid validation"
   },
   {
     "id": 30,
@@ -267,7 +267,7 @@
     "difficulty": "medium",
     "acceptanceRate": 65.2,
     "dataStructures": ["trie", "string"],
-    "topicType": "system design"
+    "topic": "system design"
   },
   {
     "id": 31,
@@ -276,7 +276,7 @@
     "difficulty": "medium",
     "acceptanceRate": 73.1,
     "dataStructures": ["matrix"],
-    "topicType": "array manipulation"
+    "topic": "array manipulation"
   },
   {
     "id": 32,
@@ -285,7 +285,7 @@
     "difficulty": "medium",
     "acceptanceRate": 67.8,
     "dataStructures": ["heap", "array"],
-    "topicType": "geometry"
+    "topic": "geometry"
   },
   {
     "id": 33,
@@ -294,7 +294,7 @@
     "difficulty": "easy",
     "acceptanceRate": 85.6,
     "dataStructures": ["string"],
-    "topicType": "string validation"
+    "topic": "string validation"
   },
   {
     "id": 34,
@@ -303,7 +303,7 @@
     "difficulty": "hard",
     "acceptanceRate": 42.7,
     "dataStructures": ["tree"],
-    "topicType": "tree traversal"
+    "topic": "tree traversal"
   },
   {
     "id": 35,
@@ -312,7 +312,7 @@
     "difficulty": "medium",
     "acceptanceRate": 68.1,
     "dataStructures": ["matrix"],
-    "topicType": "array traversal"
+    "topic": "array traversal"
   },
   {
     "id": 36,
@@ -321,7 +321,7 @@
     "difficulty": "medium",
     "acceptanceRate": 59.8,
     "dataStructures": ["array", "sorting"],
-    "topicType": "two pointer"
+    "topic": "two pointer"
   },
   {
     "id": 37,
@@ -330,7 +330,7 @@
     "difficulty": "easy",
     "acceptanceRate": 87.4,
     "dataStructures": ["array"],
-    "topicType": "dynamic programming"
+    "topic": "dynamic programming"
   },
   {
     "id": 38,
@@ -339,7 +339,7 @@
     "difficulty": "medium",
     "acceptanceRate": 48.9,
     "dataStructures": ["string"],
-    "topicType": "dynamic programming"
+    "topic": "dynamic programming"
   },
   {
     "id": 39,
@@ -348,7 +348,7 @@
     "difficulty": "medium",
     "acceptanceRate": 53.2,
     "dataStructures": ["array"],
-    "topicType": "dynamic programming"
+    "topic": "dynamic programming"
   },
   {
     "id": 40,
@@ -357,7 +357,7 @@
     "difficulty": "medium",
     "acceptanceRate": 66.4,
     "dataStructures": ["array"],
-    "topicType": "dynamic programming"
+    "topic": "dynamic programming"
   },
   {
     "id": 41,
@@ -366,7 +366,7 @@
     "difficulty": "easy",
     "acceptanceRate": 88.6,
     "dataStructures": ["linked list"],
-    "topicType": "linked list operations"
+    "topic": "linked list operations"
   },
   {
     "id": 42,
@@ -375,7 +375,7 @@
     "difficulty": "easy",
     "acceptanceRate": 90.2,
     "dataStructures": ["string", "hashmap"],
-    "topicType": "string validation"
+    "topic": "string validation"
   },
   {
     "id": 43,
@@ -384,7 +384,7 @@
     "difficulty": "medium",
     "acceptanceRate": 67.1,
     "dataStructures": ["queue", "tree"],
-    "topicType": "tree traversal"
+    "topic": "tree traversal"
   },
   {
     "id": 44,
@@ -393,7 +393,7 @@
     "difficulty": "medium",
     "acceptanceRate": 61.8,
     "dataStructures": ["array", "queue"],
-    "topicType": "system design"
+    "topic": "system design"
   },
   {
     "id": 45,
@@ -402,7 +402,7 @@
     "difficulty": "medium",
     "acceptanceRate": 55.6,
     "dataStructures": ["matrix", "graph"],
-    "topicType": "graph traversal"
+    "topic": "graph traversal"
   },
   {
     "id": 46,
@@ -411,7 +411,7 @@
     "difficulty": "easy",
     "acceptanceRate": 85.5,
     "dataStructures": ["tree"],
-    "topicType": "tree traversal"
+    "topic": "tree traversal"
   },
   {
     "id": 47,
@@ -420,7 +420,7 @@
     "difficulty": "medium",
     "acceptanceRate": 69.8,
     "dataStructures": ["string", "recursion"],
-    "topicType": "backtracking"
+    "topic": "backtracking"
   },
   {
     "id": 48,
@@ -429,7 +429,7 @@
     "difficulty": "medium",
     "acceptanceRate": 53.6,
     "dataStructures": ["matrix", "recursion"],
-    "topicType": "backtracking"
+    "topic": "backtracking"
   },
   {
     "id": 49,
@@ -438,7 +438,7 @@
     "difficulty": "hard",
     "acceptanceRate": 38.9,
     "dataStructures": ["matrix", "recursion"],
-    "topicType": "backtracking"
+    "topic": "backtracking"
   },
   {
     "id": 50,
@@ -447,6 +447,6 @@
     "difficulty": "medium",
     "acceptanceRate": 58.7,
     "dataStructures": ["string", "set"],
-    "topicType": "dynamic programming"
+    "topic": "dynamic programming"
   }
 ]
