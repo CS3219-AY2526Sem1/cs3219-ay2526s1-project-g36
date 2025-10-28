@@ -8,8 +8,16 @@ type Profile = {
   id: string;
   email: string | null;
   username: string | null;
-  firstName: string | null;
-  lastName: string | null;
+  first_name: string | null;
+  last_name: string | null;
+};
+
+type QuestionHistoryItem = {
+  id: string;
+  questionId: string;
+  title: string;
+  startedAt: string;   // ISO
+  submittedAt: string; // ISO
 };
 
 export default function ProfilePage() {
@@ -23,6 +31,9 @@ export default function ProfilePage() {
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [history, setHistory] = useState<QuestionHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   // get email quickly from supabase session so it’s visible before /me resolves
   useEffect(() => {
@@ -42,14 +53,15 @@ export default function ProfilePage() {
       setLoading(true);
       setError(null);
       try {
-        const me = await backendJson<Profile>("/auth/me", { method: "GET" });
+        const response = await backendJson<{ profile: Profile }>("/profile/me", { method: "GET" });
+        const me = response.profile;
         if (!mounted) return;
 
         // coalesce nullish values to empty strings for controlled inputs
         //setEmail(me.email ?? "");
         setUsername(me.username ?? "");
-        setFirstName(me.firstName ?? "");
-        setLastName(me.lastName ?? "");
+        setFirstName(me.first_name ?? "");
+        setLastName(me.last_name ?? "");
       } catch (e: any) {
         setError(e?.message ?? "Failed to load profile");
       } finally {
@@ -65,19 +77,19 @@ export default function ProfilePage() {
     setError(null);
     setSuccess(null);
     try {
-      const updated = await backendJson<Profile>("/me", {
+      const updated = await backendJson<Profile>("/profile/me", {
         method: "PATCH",
         body: JSON.stringify({
           username: username || null,   // (optional) send null to clear on backend
-          firstName: firstName || null,
-          lastName: lastName || null,
+          first_name: firstName || null,
+          last_name: lastName || null,
         }),
       });
       // re-hydrate with what backend actually stored
       setEmail(updated.email ?? "");
       setUsername(updated.username ?? "");
-      setFirstName(updated.firstName ?? "");
-      setLastName(updated.lastName ?? "");
+      setFirstName(updated.first_name ?? "");
+      setLastName(updated.last_name ?? "");
       setSuccess("Profile saved!");
     } catch (e: any) {
       setError(e?.message ?? "Failed to save");
@@ -163,7 +175,34 @@ export default function ProfilePage() {
         </form>
       </section>
 
-      {/* you can keep your history section below, unchanged */}
+      {/* Question History */}
+      <section className="mt-10 max-w-2xl">
+        <h2 className="text-2xl font-semibold mb-3">Question History</h2>
+        {historyLoading ? (
+          <p className="text-gray-600">Loading history…</p>
+        ) : history.length === 0 ? (
+          <p className="text-gray-600">No questions completed yet.</p>
+        ) : (
+          <ul className="divide-y rounded-xl border bg-white">
+            {history.map((h) => (
+              <li key={h.id} className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{h.title}</p>
+                  <p className="text-sm text-gray-600">
+                    {h.startedAt ?? "—"} · {new Date(h.submittedAt).toLocaleString()}
+                  </p>
+                </div>
+                <a
+                  href={`/questions/${h.questionId}`}
+                  className="text-blue-600 hover:underline text-sm"
+                >
+                  View
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }

@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("PRISMA_DATABASE_URL")
+  directUrl = env("PRISMA_DIRECT_URL")
+}
+
+model Profile {
+  user_id     String   @id @db.Uuid
+  email      String
+  username   String
+  first_name String?
+  last_name  String?
+
+  // A profile can have many questions attempted
+  questions  Question[]
+
+  @@map("profiles")
+}
+
+model Question {
+  user_id      String   @db.Uuid
+  question_id  String
+  status       String
+  started_at   DateTime @db.Timestamptz @default(now())
+  submitted_at DateTime? @db.Timestamptz
+
+  user Profile @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@id([user_id, question_id]) // composite primary key
+  @@map("questions")
+}
