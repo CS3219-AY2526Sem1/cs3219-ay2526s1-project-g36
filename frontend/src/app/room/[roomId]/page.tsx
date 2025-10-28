@@ -1,4 +1,4 @@
-import CollabTextArea from "./CollabTextArea";
+import CollabTextArea from "../../components/room/CollabTextArea";
 
 type Props = {
     params: Promise<{ roomId: string }> | { roomId: string };
