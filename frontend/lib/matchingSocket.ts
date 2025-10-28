@@ -17,6 +17,7 @@ export function getMatchingSocket(token: string): Socket {
             token,
         },
         forceNew: false,
+        autoConnect: false,
     });
 
     return socket;
