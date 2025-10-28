@@ -12,9 +12,13 @@ export class QuestionsController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('topic') topic?: string,
+    @Query('difficulty') difficulty?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortDir') sortDir?: string,
+    @Query('q') q?: string,
   ) {
     const size = Number(pageSize || limit) || 20;
     const p = Math.max(1, Number(page) || 1);
-    return this.svc.search({ topic, page: p, pageSize: size });
+    return this.svc.search({ topic, difficulty, sortBy, sortDir, q, page: p, pageSize: size });
   }
 }

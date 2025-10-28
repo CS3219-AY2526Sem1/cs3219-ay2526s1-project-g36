@@ -23,6 +23,10 @@ export default function ProblemsPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [topic, setTopic] = useState("");
+  const [difficulty, setDifficulty] = useState<string>("");
+  const [q, setQ] = useState("");
+  const [sortBy, setSortBy] = useState<string>("title");
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [total, setTotal] = useState(0);
   const [selectedProblem, setSelectedProblem] = useState<Question | null>(null);
 
@@ -36,6 +40,10 @@ export default function ProblemsPage() {
         qs.set("page", String(page));
         qs.set("pageSize", String(pageSize));
         if (topic.trim()) qs.set("topic", topic.trim());
+        if (difficulty) qs.set("difficulty", difficulty);
+        if (q.trim()) qs.set("q", q);
+        if (sortBy) qs.set("sortBy", sortBy);
+        if (sortDir) qs.set("sortDir", sortDir);
 
         const res = await fetch(`/api/questions?${qs.toString()}`, { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -60,7 +68,7 @@ export default function ProblemsPage() {
     return () => {
       ignore = true;
     };
-  }, [page, pageSize, topic]);
+  }, [page, pageSize, topic, difficulty, q, sortBy, sortDir]);
 
   return (
     <main className="relative min-h-screen p-8">
@@ -72,18 +80,74 @@ export default function ProblemsPage() {
       {loading && <p className="text-gray-600">Loading problems…</p>}
       {error && <p className="text-red-600">{error}</p>}
 
-      {/* Filter controls */}
-      <div className="mb-4 flex items-center gap-3">
+      {/* Filter and sort controls */}
+      <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
         <input
           type="text"
-          placeholder="Filter by related topic (e.g., Array)"
-          value={topic}
+          placeholder="Search by keyword / name / index (case sensitive)"
+          value={q}
           onChange={(e) => {
             setPage(1);
-            setTopic(e.target.value);
+            setQ(e.target.value);
           }}
-          className="w-80 rounded border px-3 py-2"
+          className="w-full rounded border px-3 py-2"
         />
+        <div className="flex gap-2">
+          <select
+            className="w-full rounded border px-3 py-2"
+            value={difficulty}
+            onChange={(e) => {
+              setPage(1);
+              setDifficulty(e.target.value);
+            }}
+          >
+            <option value="">All difficulties</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Filter by topic (e.g., Array)"
+            value={topic}
+            onChange={(e) => {
+              setPage(1);
+              setTopic(e.target.value);
+            }}
+            className="w-full rounded border px-3 py-2"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            className="w-full rounded border px-3 py-2"
+            value={sortBy}
+            onChange={(e) => {
+              setPage(1);
+              setSortBy(e.target.value);
+            }}
+          >
+            <option value="title">Title</option>
+            <option value="difficulty">Difficulty</option>
+            <option value="popularity">Popularity (likes)</option>
+            <option value="solve_rate">Solve rate (acceptance)</option>
+            <option value="discuss_count">Discuss count</option>
+            <option value="rating">Rating</option>
+            <option value="frequency">Frequency</option>
+            <option value="id">Index</option>
+            <option value="topic">Topic</option>
+          </select>
+          <button
+            onClick={() => {
+              setPage(1);
+              setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+            }}
+            className="whitespace-nowrap rounded border px-3 py-2"
+            aria-label="Toggle sort direction"
+            type="button"
+          >
+            {sortDir === 'asc' ? 'Asc' : 'Desc'}
+          </button>
+        </div>
       </div>
 
       {/* List */}
@@ -99,10 +163,17 @@ export default function ProblemsPage() {
             const key = (q.id ?? String(q._id ?? idx)) as React.Key;
 
             return (
-              <button
+              <div
                 key={key}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedProblem(q)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedProblem(q);
+                  }
+                }}
                 className="w-full rounded-lg border p-4 text-left transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <div className="flex items-center justify-between">
@@ -115,9 +186,19 @@ export default function ProblemsPage() {
                 {topics.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {topics.map((t, i) => (
-                      <span key={i} className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-800">
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTopic(t);
+                          setPage(1);
+                        }}
+                        className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-800 hover:bg-gray-200"
+                        title={`Filter by ${t}`}
+                      >
                         {t}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -133,7 +214,7 @@ export default function ProblemsPage() {
                     View on LeetCode
                   </a>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
