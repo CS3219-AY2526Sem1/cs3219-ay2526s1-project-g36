@@ -54,9 +54,13 @@ const collectionProvider: Provider = {
     useFactory: async (db: Db): Promise<Collection> => {
         if (cachedCollection) {
             return cachedCollection;
-        } 
+        }
 
-        cachedCollection = db.collection(process.env.MONGODB_COLLECTION || 'questions');
+        // Support both MONGODB_COLLECTION and legacy QUESTIONS_COLLECTION_NAME
+        const collectionName =
+          process.env.MONGODB_COLLECTION || process.env.QUESTIONS_COLLECTION_NAME || 'questions';
+
+        cachedCollection = db.collection(collectionName);
         return cachedCollection;
     },
     inject: [MONGO_DB],

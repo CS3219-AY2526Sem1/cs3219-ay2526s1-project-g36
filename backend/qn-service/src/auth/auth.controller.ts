@@ -5,7 +5,7 @@ import { BearerAuthGuard } from './bearer-auth.guard';
 @Controller('auth')
 export class AuthController {
     // declares which guard to use for this controller
-    @UseGuards(BearerAuthGuard)
+    // @UseGuards(BearerAuthGuard)
     // defines a GET endpoint at 'auth/me' to return the authenticated user's info
     @Get('me')
     
