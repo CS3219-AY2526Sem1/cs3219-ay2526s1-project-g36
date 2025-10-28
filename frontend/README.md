@@ -42,10 +42,10 @@ This file stores environment variables needed to connect to Supabase.
 
 ```bash
 # public anon key of supabase instance
-NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpb2psbWliaGNjdGducHJpZXpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyMjQ2MzgsImV4cCI6MjA3NDgwMDYzOH0.2JeHLKykb5y2EQsSVnNJec-vz3ybQgY94KasZa9OfIM"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"
 
 # public url of supabase instance
-NEXT_PUBLIC_SUPABASE_URL = "https://diojlmibhcctgnpriezo.supabase.co"
+NEXT_PUBLIC_SUPABASE_URL = "YOUR_PUBLIC_SUPABASE_URL"
 ```
 
 # Running the Development Server
