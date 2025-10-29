@@ -43,3 +43,13 @@ export function mockLogout() {
   localStorage.removeItem("peerprepUser");
   sessionStorage.removeItem("peerprepUser");
 }
+
+export interface Question {
+  id: number;
+  name: string;
+  description: string;
+  difficulty: string;
+  acceptanceRate: number;
+  dataStructures: string[];
+  topic: string;
+}

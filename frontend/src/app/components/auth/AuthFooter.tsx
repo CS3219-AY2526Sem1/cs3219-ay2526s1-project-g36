@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTheme } from "../../../../context/ThemeContext";
 import { useRouter } from "next/navigation";
 
@@ -18,7 +19,8 @@ export default function AuthFooter() {
         Forgot Password?
       </button>
 
-      <button
+      <Link
+        href="/signup"
         className="cursor-pointer transition"
         style={{ color: theme.primary }}
         onMouseEnter={(e) => (e.currentTarget.style.color = theme.accent)}
@@ -26,7 +28,7 @@ export default function AuthFooter() {
         onClick={() => router.push("/signup")}
       >
         Sign Up
-      </button>
+      </Link>
     </div>
   );
 }

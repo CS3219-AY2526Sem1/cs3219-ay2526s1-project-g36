@@ -2,36 +2,31 @@
 
 import Link from "next/link";
 import TopNavBar from "../components/navbar/TopNavBar";
+import { useState } from "react";
+import FilterPanel from "../components/problems/FilterPanel";
+import ProblemDetailsPanel from "../components/problems/ProblemDetailsPanel";
+import mockQuestions from "../../../data/mockQuestions.json";
+import { Question } from "../../../lib/mockApi";
 
 export default function ProblemsPage() {
+  const [selectedProblem, setSelectedProblem] = useState<Question | null>(null);
+
   return (
-    <>
-    <TopNavBar />
-    <main className="p-8">
-      <h1 className="text-3xl font-bold mb-4">Problem Database</h1>
-      <p className="text-gray-700 mb-6">
-        Browse and solve coding problems, or find a partner to collaborate with.
-      </p>
-
-      <div className="space-y-3">
-        <div className="border p-4 rounded-lg hover:bg-gray-50">
-          <h2 className="font-semibold">Two Sum</h2>
-          <p className="text-sm text-gray-600">Difficulty: Easy</p>
-        </div>
-
-        <div className="border p-4 rounded-lg hover:bg-gray-50">
-          <h2 className="font-semibold">Add Two Numbers</h2>
-          <p className="text-sm text-gray-600">Difficulty: Medium</p>
-        </div>
+    <main className="relative min-h-screen flex p-6">
+      <div className="flex-1">
+        <h1 className="text-2xl font-bold mb-4">Problems</h1>
+        <FilterPanel
+          questions={mockQuestions}
+          onSelectProblem={(question) => setSelectedProblem(question)}
+        />
       </div>
 
-      <Link
-        href="/room/abc123"
-        className="inline-block mt-8 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-      >
-        Join Collaboration Room
-      </Link>
+      {selectedProblem && (
+        <ProblemDetailsPanel
+          problem={selectedProblem}
+          onClose={() => setSelectedProblem(null)}
+        />
+      )}
     </main>
-    </>
   );
 }
