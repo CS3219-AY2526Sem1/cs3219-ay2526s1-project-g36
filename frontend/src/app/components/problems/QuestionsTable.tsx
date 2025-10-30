@@ -1,24 +1,49 @@
 "use client";
 
-import { Question } from "../../../../lib/mockApi";
 import QuestionRow from "./QuestionRow";
+import { useTheme } from "../../../../context/ThemeContext";
 
 interface Props {
-  questions: Question[];
-  onSelect: (question: Question) => void;
+  questions: any[];
+  onSelect: (q: any) => void;
 }
 
 export default function QuestionsTable({ questions, onSelect }: Props) {
+  const { theme } = useTheme();
+
   return (
-    <table className="w-full text-left border-collapse">
+    <table
+      className="w-full text-left border-collapse"
+      style={{
+        backgroundColor: theme.surface,
+        color: theme.text,
+      }}
+    >
       <thead>
-        <tr>
-          <th className="p-3">#</th>
-          <th className="p-3">Name</th>
-          <th className="p-3">Difficulty</th>
-          <th className="p-3">Acceptance</th>
-          <th className="p-3">Data Structures</th>
-          <th className="p-3">Topic</th>
+        <tr
+          style={{
+            backgroundColor: theme.background,
+            borderBottom: `2px solid ${theme.border}`,
+          }}
+        >
+          {["#", "Name", "Difficulty", "Acceptance", "Data Structures", "Topic"].map(
+            (header) => (
+              <th
+                key={header}
+                className="p-3 font-semibold"
+                style={{
+                  color: theme.textSecondary, // dark gray for light mode, light gray for dark mode
+                  borderBottom: `1px solid ${theme.border}`,
+                  backgroundColor:
+                    theme.id === "light"
+                      ? "#F1F5F9" // soft blue-gray background to add contrast
+                      : theme.surface, // keep consistent in dark mode
+                }}
+              >
+                {header}
+              </th>
+            )
+          )}
         </tr>
       </thead>
       <tbody>
