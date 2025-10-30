@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useTheme } from "../../../../context/ThemeContext";
+import { useRouter } from "next/navigation";
 
 export default function AuthFooter() {
   const { theme } = useTheme();
+  const router = useRouter();
 
   return (
     <div className="flex justify-between text-sm mt-3">
@@ -23,6 +25,7 @@ export default function AuthFooter() {
         style={{ color: theme.primary }}
         onMouseEnter={(e) => (e.currentTarget.style.color = theme.accent)}
         onMouseLeave={(e) => (e.currentTarget.style.color = theme.primary)}
+        onClick={() => router.push("/signup")}
       >
         Sign Up
       </Link>

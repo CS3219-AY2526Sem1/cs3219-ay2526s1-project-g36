@@ -4,7 +4,7 @@ import { supabaseBrowser } from '../utils/supabase/client';
  * This file provides helper functions to make authenticated requests to the backend API.
  */
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4001';
 
 export async function backendFetch(path: string, init?: RequestInit) {
     // read the current Supabase session in the browser

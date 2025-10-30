@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
+import { ProfileModule } from './profile/profile.module';
 import { QuestionsModule } from './questions/questions.module';
 
 @Module({
@@ -8,7 +8,7 @@ import { QuestionsModule } from './questions/questions.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    AuthModule,
+    ProfileModule,
     QuestionsModule,
   ],
 })

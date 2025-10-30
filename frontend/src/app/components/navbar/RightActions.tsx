@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { mockCheckLogin } from "../../../../lib/mockApi";
+import { checkLogin } from "../../../../lib/auth";
 import LoginButton from "./LoginButton";
 import LogoutButton from "./LogoutButton";
 
@@ -9,7 +9,7 @@ export default function RightActions() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const user = mockCheckLogin();
+    const user = checkLogin();
     setIsLoggedIn(!!user);
   }, []);
 
