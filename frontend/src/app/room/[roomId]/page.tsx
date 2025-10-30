@@ -1,13 +1,41 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
+import { getSession } from "../../../../lib/auth";
 import CollabTextArea from "../../components/room/CollabTextArea";
+import { Session } from "@supabase/supabase-js";
 
 type Props = {
-    params: Promise<{ roomId: string }> | { roomId: string };
+    params: Promise<{ roomId: string }>;
 };
 
-export default async function RoomPage({ params }: Props) {
-    const { roomId } = await params;
+export default function RoomPage({ params }: Props) {
+    const { roomId } = use(params);
+    const [session, setSession] = useState<Session | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const token = "dev-test-token"; // Replace with actual token retrieval logic
+    useEffect(() => {
+        const fetchData = async () => {
+            const fetchedSession = await getSession();
+            console.log("Session in RoomPage:", fetchedSession);
+            if (!fetchedSession) {
+                throw new Error("Unable to fetch session");
+            }
+            setSession(fetchedSession);
+            setLoading(false);
+        };
+        fetchData();
+    }, [roomId]);
+
+    if (loading) {
+        return <div className="p-8">Loading room...</div>;
+    }
+
+    if (!session) {
+        throw new Error("No session available");
+    }
+
+    const token = session.access_token;
 
     return (
         <main className="p-8">

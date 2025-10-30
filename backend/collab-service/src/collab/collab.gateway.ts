@@ -56,6 +56,7 @@ export class CollabGateway {
       console.log('Current rooms:', client.rooms);
     } catch (error) {
       try {
+        console.log('Authentication error during WebSocket connection:', error);
         client.emit('collab:error', {
           ok: false,
           message: (error as Error).message,

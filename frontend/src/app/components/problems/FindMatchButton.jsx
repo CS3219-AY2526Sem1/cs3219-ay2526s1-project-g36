@@ -3,22 +3,22 @@
 import { useMemo } from "react";
 import { useTheme } from "../../../../context/ThemeContext";
 import { useMatching } from "../../../../hooks/useMatching";
-
-const PLACEHOLDER_USER_ID = "user-12345";
-const DEV_TOKEN = "dev-test-token";
+import { getSession } from "../../../../lib/auth";
 
 export default function FindMatchButton({ problem }) {
   const { theme } = useTheme();
 
+  const session = getSession();
+  const token = session.access_token;
+
   const { status, joinQueue } = useMatching({
-    token: DEV_TOKEN,
+    token,
     onMatched: ({ roomId, matchedUserId }) => {
       console.log(`Matched! Room ID: ${roomId}, Matched User ID: ${matchedUserId}`);
     }
   });
 
   const payload = useMemo(() => ({
-    userId: PLACEHOLDER_USER_ID,
     difficulty: problem.difficulty.toLowerCase(),
     topics: [problem.topic],
   }), [problem]);
