@@ -9,6 +9,7 @@ export default function FindMatchButton({ problem }) {
   const { theme } = useTheme();
 
   const session = getSession();
+  const userId = session.id;
   const token = session.access_token;
 
   const { status, joinQueue } = useMatching({
@@ -19,7 +20,7 @@ export default function FindMatchButton({ problem }) {
   });
 
   const payload = useMemo(() => ({
-    userId: PLACEHOLDER_USER_ID,
+    userId: userId,
     difficulty: problem.difficulty.toLowerCase(),
     topics: [problem.topic],
   }), [problem]);

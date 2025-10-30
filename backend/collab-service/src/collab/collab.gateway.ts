@@ -5,32 +5,28 @@ import {
   MessageBody,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { UseGuards } from '@nestjs/common';
+import { WsAuthGuard } from '../../../api/src/auth/ws-auth.guard';
 import { Socket, Server } from 'socket.io';
-import { AuthService } from 'src/auth/auth.service';
 import { CollabService } from './collab.service';
 import { toUint8 } from './helpers';
 
+@UseGuards(WsAuthGuard)
 @WebSocketGateway({ namespace: '/collab', transports: ['websocket'] })
 export class CollabGateway {
-  constructor(
-    private readonly auth: AuthService,
-    private readonly collab: CollabService,
-  ) {}
+  constructor(private readonly collab: CollabService) {}
 
   @WebSocketServer()
   server: Server;
 
   async handleConnection(client: Socket) {
     try {
-      // read token from handshake auth
-      const token = (client.handshake.auth?.token as string) || null;
-      // verify JWT
-      const { userId } = this.auth.verify(token);
-
       const sessionId = (
         client.handshake.auth.sessionId as string | null
       ).trim();
+      console.log('Client attempting to connect with sessionId:', sessionId);
       if (!sessionId) {
+        console.log('No sessionId provided, disconnecting client');
         client.emit('collab:error', {
           ok: false,
           message: 'No sessionId provided',
@@ -39,8 +35,7 @@ export class CollabGateway {
         return;
       }
 
-      // attach userId and sessionId to socket
-      client.data.userId = userId;
+      const userId = client.data.user as string;
       client.data.sessionId = sessionId;
 
       // join room based on sessionId
@@ -56,6 +51,7 @@ export class CollabGateway {
       console.log('Current rooms:', client.rooms);
     } catch (error) {
       try {
+        console.error('Error during WebSocket connection:', error);
         client.emit('collab:error', {
           ok: false,
           message: (error as Error).message,
