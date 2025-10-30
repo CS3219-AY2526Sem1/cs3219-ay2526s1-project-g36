@@ -1,3 +1,4 @@
+import { getSession } from "../../../../lib/auth";
 import CollabTextArea from "../../components/room/CollabTextArea";
 
 type Props = {
@@ -7,7 +8,11 @@ type Props = {
 export default async function RoomPage({ params }: Props) {
     const { roomId } = await params;
 
-    const token = "dev-test-token"; // Replace with actual token retrieval logic
+    const session = await getSession();
+    if (!session) {
+        throw new Error("Unable to fetch session");
+    }
+    const token = session.access_token;
 
     return (
         <main className="p-8">
