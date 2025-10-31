@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "../../../../context/ThemeContext";
 import { useMatching } from "../../../../hooks/useMatching";
 import { getSession } from "../../../../lib/auth";
@@ -8,8 +8,23 @@ import { getSession } from "../../../../lib/auth";
 export default function FindMatchButton({ problem }) {
   const { theme } = useTheme();
 
-  const session = getSession();
-  const token = session.access_token;
+  const [session, setSession] = useState(null);
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      const session = await getSession();
+      if (!session) {
+        console.error("No user session found.");
+        return;
+      }
+      setSession(session);
+      setToken(session.access_token);
+      setLoading(false);
+    };
+    fetchSession();
+  }, []);
 
   const { status, joinQueue } = useMatching({
     token,
@@ -32,6 +47,10 @@ export default function FindMatchButton({ problem }) {
     });
     joinQueue(payload);
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <button

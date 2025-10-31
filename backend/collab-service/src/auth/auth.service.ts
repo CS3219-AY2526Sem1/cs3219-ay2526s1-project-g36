@@ -15,12 +15,7 @@ export class AuthService {
     const secret = this.cfg.get<string>('SUPABASE_JWT_SECRET');
 
     if (!secret) {
-      if (token === 'dev-test-token') return { userId: 'test-user' };
-
-      const decoded = jwt.decode(token) as JwtPayload | null;
-      if (!decoded?.sub)
-        throw new UnauthorizedException('Invalid token (no sub claim)');
-      return { userId: decoded.sub };
+      throw new UnauthorizedException('JWT secret not configured');
     }
 
     try {
