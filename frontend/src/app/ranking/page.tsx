@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTheme } from "../../../context/ThemeContext";
 import RankingRow from "../components/ranking/RankingRow";
 import TopNavBar from "../components/navbar/TopNavBar";
+import UserRank from "../components/common/UserRank";
 
 interface User {
   username: string;
@@ -65,14 +66,16 @@ export default function RankingPage() {
       }}
     >
       <TopNavBar />
+      <div className="flex items-center justify-between mb-6">
         <h1
-            className="pt-6 text-3xl font-bold mb-6"
-            style={{
-                color: theme.accent,
-            }}
-            >
-        Top Peers
+          className="pt-6 text-3xl font-bold"
+          style={{ color: theme.accent }}
+        >
+          Top Peers
         </h1>
+        {/* TODO Replace 5 with actual user rank logic */}
+        <UserRank rank={5} /> 
+      </div>
 
 
       <div
