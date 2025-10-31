@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { backendJson } from "../../../lib/backend";
 import { supabaseBrowser } from "../../../utils/supabase/client";
+import { useRequireAuth } from '../../../lib/useRequireAuth';
 
 type Profile = {
   id: string;
@@ -21,6 +22,9 @@ type QuestionHistoryItem = {
 };
 
 export default function ProfilePage() {
+  // use hooks to implement is logged in guard
+  const ok = useRequireAuth();
+  
   // form state always defaults to empty strings so inputs always show usable fields
   const [username, setUsername]   = useState("");
   const [firstName, setFirstName] = useState("");
