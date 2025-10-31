@@ -1,24 +1,39 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "../../../../context/ThemeContext";
 import { useMatching } from "../../../../hooks/useMatching";
-
-const PLACEHOLDER_USER_ID = "user-12345";
-const DEV_TOKEN = "dev-test-token";
+import { getSession } from "../../../../lib/auth";
 
 export default function FindMatchButton({ problem }) {
   const { theme } = useTheme();
 
+  const [session, setSession] = useState(null);
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      const session = await getSession();
+      if (!session) {
+        console.error("No user session found.");
+        return;
+      }
+      setSession(session);
+      setToken(session.access_token);
+      setLoading(false);
+    };
+    fetchSession();
+  }, []);
+
   const { status, joinQueue } = useMatching({
-    token: DEV_TOKEN,
+    token,
     onMatched: ({ roomId, matchedUserId }) => {
       console.log(`Matched! Room ID: ${roomId}, Matched User ID: ${matchedUserId}`);
     }
   });
 
   const payload = useMemo(() => ({
-    userId: PLACEHOLDER_USER_ID,
     difficulty: problem.difficulty.toLowerCase(),
     topics: [problem.topic],
   }), [problem]);
@@ -32,6 +47,10 @@ export default function FindMatchButton({ problem }) {
     });
     joinQueue(payload);
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <button

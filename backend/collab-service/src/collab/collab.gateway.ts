@@ -52,8 +52,6 @@ export class CollabGateway {
 
       // small emit to confirm connection
       client.emit('collab:connected', { ok: true, userId, sessionId });
-      console.log(`User ${userId} connected to session ${sessionId}`);
-      console.log('Current rooms:', client.rooms);
     } catch (error) {
       try {
         client.emit('collab:error', {
@@ -70,12 +68,6 @@ export class CollabGateway {
   handleDisconnect(client: Socket) {
     const { userId, sessionId } = client.data;
     console.log(`User ${userId} disconnected from session ${sessionId}`);
-  }
-
-  @SubscribeMessage('ping')
-  handlePing(@ConnectedSocket() client: Socket, @MessageBody() data: any) {
-    console.log('Ping received:', data);
-    client.emit('pong', { msg: 'Hello from server!' });
   }
 
   @SubscribeMessage('collab:update')
@@ -128,6 +120,5 @@ export class CollabGateway {
     }
 
     client.emit('collab:roomDetails', roomDetails);
-    console.log('Room details sent to client:', roomDetails);
   }
 }
