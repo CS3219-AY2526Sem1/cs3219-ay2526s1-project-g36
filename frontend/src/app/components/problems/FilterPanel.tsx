@@ -82,7 +82,7 @@ export default function FilterPanel({ questions, onSelectProblem }: Props) {
         <select
           value={selectedTopic || ""}
           onChange={(e) => setSelectedTopic(e.target.value || null)}
-          className="border rounded-lg p-2 bg-gray-50 dark:bg-gray-800 shadow-sm focus:outline-none"
+          className="rounded-lg p-2 focus:outline-none focus:ring-"
           style={{
             borderColor: theme.border,
             color: theme.text,
