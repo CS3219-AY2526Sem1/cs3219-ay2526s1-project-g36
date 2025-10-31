@@ -48,3 +48,14 @@ export async function signUp(email: string, password: string) {
   if (error) throw error;
   return data;
 }
+
+export async function signInWithProvider(provider: "google" | "github") {
+  const { error } = await supabaseBrowser.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: `${window.location.origin}`, // automatically handled since detectSessionInUrl=true
+    },
+  });
+
+  if (error) throw error;
+}
