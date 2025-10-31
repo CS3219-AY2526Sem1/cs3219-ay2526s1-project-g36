@@ -14,7 +14,10 @@ export default function ProblemsPage() {
   return (
     <main className="relative min-h-screen flex p-6">
       <div className="flex-1">
-        <h1 className="text-2xl font-bold mb-4">Problems</h1>
+        <TopNavBar />
+        <div className="my-4">
+          <h1 className="text-2xl font-bold mb-4">Problems</h1>
+        </div>
         <FilterPanel
           questions={mockQuestions}
           onSelectProblem={(question) => setSelectedProblem(question)}
