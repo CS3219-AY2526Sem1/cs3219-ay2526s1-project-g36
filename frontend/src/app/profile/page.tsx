@@ -24,6 +24,11 @@ type QuestionHistoryItem = {
 export default function ProfilePage() {
   // use hooks to implement is logged in guard
   const ok = useRequireAuth();
+  if (!ok) {
+    return <div className="flex h-screen items-center justify-center">
+      <span className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600" />
+      </div>;
+  }
   
   // form state always defaults to empty strings so inputs always show usable fields
   const [username, setUsername]   = useState("");
