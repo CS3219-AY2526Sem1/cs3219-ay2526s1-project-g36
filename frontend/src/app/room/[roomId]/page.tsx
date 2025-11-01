@@ -12,20 +12,19 @@ type Props = {
 };
 
 export default function RoomPage({ params }: Props) {
-    // const ok = useRequireAuth();
-    // if (!ok) {
-    //     return (
-    //         <div className="flex h-screen items-center justify-center">
-    //             <span className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600" />
-    //         </div>
-    //     );
-    // }
+    const ok = useRequireAuth();
+
     const { roomId } = use(params);
     const router = useRouter();
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!ok) {
+            return;
+        }
+        let cancelled = false;
+
         const fetchData = async () => {
             const fetchedSession = await getSession();
             if (!fetchedSession) {
@@ -35,9 +34,12 @@ export default function RoomPage({ params }: Props) {
             setLoading(false);
         };
         fetchData();
-    }, [roomId]);
+        return () => {
+            cancelled = true;
+        };
+    }, [ok, roomId]);
 
-    if (loading) {
+    if (!ok || loading) {
         return <div className="p-8">Loading room...</div>;
     }
 
