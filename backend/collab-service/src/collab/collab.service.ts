@@ -47,8 +47,6 @@ export class CollabService {
 
   private newSession(): SessionState {
     const doc = new Y.Doc();
-    // Provide a default initial content
-    doc.getText('content').insert(0, 'Welcome to the collaborative editor!\n');
     const awareness = new Awareness(doc);
     return {
       doc,
