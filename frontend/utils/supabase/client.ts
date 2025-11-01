@@ -13,6 +13,12 @@ export const supabaseBrowser = (() => {
     if (_client) return _client;
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()!;
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()!;
-    _client = createBrowserClient(url, anon);
+    _client = createBrowserClient(url, anon, {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+        },
+    });
     return _client;
 }) ();
