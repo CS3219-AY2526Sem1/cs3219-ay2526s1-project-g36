@@ -5,19 +5,21 @@ import { getSession, logout } from "../../../../lib/auth";
 import CollabTextArea from "../../components/room/CollabTextArea";
 import { Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { useRequireAuth } from '../../../../lib/useRequireAuth';
+import { useRequireAuth } from "../../../../lib/useRequireAuth";
 
 type Props = {
     params: Promise<{ roomId: string }>;
 };
 
 export default function RoomPage({ params }: Props) {
-    const ok = useRequireAuth();
-    if (!ok) {
-        return <div className="flex h-screen items-center justify-center">
-            <span className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600" />
-        </div>;
-    }
+    // const ok = useRequireAuth();
+    // if (!ok) {
+    //     return (
+    //         <div className="flex h-screen items-center justify-center">
+    //             <span className="animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600" />
+    //         </div>
+    //     );
+    // }
     const { roomId } = use(params);
     const router = useRouter();
     const [session, setSession] = useState<Session | null>(null);
