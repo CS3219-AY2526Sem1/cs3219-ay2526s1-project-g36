@@ -3,12 +3,32 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function LeaveButton() {
+// Accept questionId and token as props
+interface LeaveButtonProps {
+  questionId: string;
+  token: string;
+}
+
+export default function LeaveButton({ questionId, token }: LeaveButtonProps) {
   const [step, setStep] = useState<"none" | "confirm" | "completed">("none");
   const router = useRouter();
 
-  const handleLeave = async () => {
-    // TODO: collab + user service backend termination/update logic here
+  // Call backend to mark question as completed if user says Yes
+  const handleLeave = async (completed = false) => {
+    if (completed && questionId && token) {
+      try {
+        await fetch("http://localhost:4001/questions/complete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ questionId }),
+        });
+      } catch (e) {
+        console.error("Failed to mark question as completed:", e);
+      }
+    }
     router.push("/problems");
   };
 
@@ -68,13 +88,13 @@ export default function LeaveButton() {
             </h3>
             <div className="flex justify-center gap-4">
               <button
-                onClick={handleLeave}
+                onClick={() => handleLeave(true)}
                 className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition cursor-pointer"
               >
                 Yes
               </button>
               <button
-                onClick={handleLeave}
+                onClick={() => handleLeave(false)}
                 className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition cursor-pointer"
               >
                 No

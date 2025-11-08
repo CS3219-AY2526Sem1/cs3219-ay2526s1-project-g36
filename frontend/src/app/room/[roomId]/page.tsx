@@ -94,7 +94,8 @@ export default function RoomPage({ params }: Props) {
                     difficulty="Medium"
                     acceptanceRate="62%"
                 />
-                <LeaveButton />
+                {/* TODO: Replace 'questionId' with actual question/problem ID from context or props */}
+                {token && <LeaveButton questionId={roomId} token={token} />}
             </div>
 
             {token && (
