@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Generated burst buffering implementation including mergeRecords, flushBurst, and combineChanges functions for real-time change aggregation.
+Author review: Reviewed merge logic for forward-typing patterns, validated delete range handling, and tested multi-line paste behavior.
+*/
+
 import { BurstBuffer, Change, EditHistoryRecord } from './types';
 import { Server } from 'socket.io';
 

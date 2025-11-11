@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Generated burst buffering implementation, history management, and session state synchronization.
+Author review: Reviewed JWT verification flow, customized burst timing parameters, and tested revert functionality for session history.
+*/
+
 import {
   WebSocketGateway,
   SubscribeMessage,

@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Debugged JWT verification issues and suggested using Supabase JWT secret for token validation.
+Author review: Implemented the fix, updated Docker Compose configuration with the correct secret, and tested token verification flow.
+*/
+
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';

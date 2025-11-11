@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Generated implementation code for combineChanges and mergeAdjacent functions.
+Author review: Reviewed algorithm correctness for handling insert/delete operations, validated edge cases, and tested chronological ordering logic.
+*/
+
 import { Change, EditHistoryRecord } from './types';
 import { MERGE_WINDOW_MS } from './helpers';
 

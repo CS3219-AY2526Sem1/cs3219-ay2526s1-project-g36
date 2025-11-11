@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Generated Yjs integration boilerplate, wrote implementation of LevelDB persistence, and snapshot/update management logic.
+Author review: Reviewed document state handling, customized history tracking and pruning logic, and implemented revert functionality with change detection.
+*/
+
 import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 import { Injectable, Logger } from '@nestjs/common';
