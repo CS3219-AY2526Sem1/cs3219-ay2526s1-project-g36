@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Debug typing of jose, suggested switch to dynamic import
+Author review: Reviewed token expiry logic, customized payload fields, and added environment-based secret handling.
+*/
+
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 //import { jwtVerify, JWTPayload } from 'jose';
 

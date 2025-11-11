@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Suggested Supabase server client setup for API route usage and server-side rendering. Used to debug env variables not loading
+Author review: Adjusted environment handling, ensured JWT propagation for SSR, and verified correct import paths for project build.
+*/
+
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 

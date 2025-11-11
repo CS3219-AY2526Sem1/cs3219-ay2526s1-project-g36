@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Generated service skeleton for MongoDB destroy client.
+Author review: Modified boilercode from mongodb and Nestjs docs to support async/await error handling and added methods for user profile persistence.
+*/
+
 import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 import { MongoClient, Db, Collection } from 'mongodb';
 import { MONGO_CLIENT, MONGO_DB, MONGO_COLLECTION } from './mongo.provider';

@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5), date: 2025-10-08
+Scope: Suggested service layer logic for retrieving and updating user profile data via Supabase/Prisma integration.
+Author review: Modified database access methods for schema accuracy, added error handling and field-level validation.
+*/
+
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProfileDto } from '../dto/profile.dto';

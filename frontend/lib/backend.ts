@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Generated boilerplate for backend API interaction utilities using fetch with JWT headers. Also debugged typing for response.
+Author review: Modified base URL configuration, integrated with environment variables, and validated request interceptor behavior.
+*/
+
 import { supabaseBrowser } from '../utils/supabase/client';
 
 /**

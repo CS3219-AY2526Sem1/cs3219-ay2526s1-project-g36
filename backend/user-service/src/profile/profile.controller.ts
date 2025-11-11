@@ -1,3 +1,11 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Debugging help for typing, response handling and request parameters/headers
+Author review: Revised route handlers to match authentication guard, added DTO validation, and integrated with ProfileService.
+*/
+
+
 import { Body, Controller, Get, ParseUUIDPipe, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import { BearerAuthGuard } from '../auth/bearer-auth.guard';
 import { ProfileService } from './profile.service';

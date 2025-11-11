@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Suggested helper functions for handling Supabase authentication tokens and session persistence.
+Author review: Verified token refresh logic, adjusted cookie handling for SSR compatibility, and added error logging.
+*/
+
 import { supabaseBrowser } from '../utils/supabase/client';
 
 // Sign in (real)

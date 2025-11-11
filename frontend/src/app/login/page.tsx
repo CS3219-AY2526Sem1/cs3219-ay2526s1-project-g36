@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Suggested initial JSX layout and form validation logic for the login page.
+Author review: Rewrote UI to match design system, added Supabase sign-in integration, and implemented error message handling.
+*/
+
 "use client";
 
 import { useEffect, useState, Fragment } from "react";
