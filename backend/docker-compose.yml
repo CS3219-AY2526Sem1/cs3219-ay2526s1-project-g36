@@ -37,7 +37,7 @@ services:
     env_file:
       - ./user-service/.env
     ports:
-      - "4001:3000" # host 4001 -> container 3000
+      - "4001:4001" # host 4001 -> container 3000
     restart: unless-stopped
 
 networks:
