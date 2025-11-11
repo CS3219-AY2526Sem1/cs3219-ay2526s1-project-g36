@@ -1,3 +1,9 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Debug errors when configuring headers
+Author review: Verified guard logic, added request user extraction and custom error messages. Boilerplate from Nest documentation
+*/
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from './jwt.service';
 

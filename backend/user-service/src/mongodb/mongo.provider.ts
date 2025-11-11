@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Suggested connection factory for MongoDB client and provider export pattern. Debugging advice for Json response and api options.
+Author review: Verified client reuse across modules and added connection health-check logging.
+*/
+
 import { MongoClient, Db, Collection, ServerApiVersion, MongoClientOptions } from 'mongodb';
 import { Provider, OnApplicationShutdown, Inject, Injectable  } from '@nestjs/common';
 import { Logger } from '@nestjs/common';

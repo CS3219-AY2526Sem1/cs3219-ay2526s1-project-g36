@@ -1,3 +1,10 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Suggested form component and submission logic for new user registration.
+Author review: Adjusted validation schema, added password confirmation checks, and integrated success redirect to dashboard.
+*/
+
 "use client";
 
 import { useEffect, useState, Fragment } from "react";

@@ -1,3 +1,11 @@
+/*
+AI Assistance Disclosure:
+Tool: ChatGPT (GPT-5)
+Scope: Generated React component structure for viewing and editing user profiles.
+Author review: Modified data fetching to use SWR, connected to backend profile endpoints, and added input sanitization.
+*/
+
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
