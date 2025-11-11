@@ -11,6 +11,19 @@ type RoomProps = {
     token: string;
 };
 
+type Change = {
+    type: "insert" | "delete";
+    line: number;
+    col: number;
+    snippet: string;
+};
+
+type EditHistoryRecord = {
+    userId: string;
+    timestamp: number;
+    changes: Change[];
+};
+
 const toUint8Array = (data: unknown): Uint8Array => {
     return data instanceof Uint8Array
         ? data
@@ -21,6 +34,18 @@ const toUint8Array = (data: unknown): Uint8Array => {
             : new Uint8Array();
 };
 
+const formatRelativeTime = (timestamp: number): string => {
+    const diff = Date.now() - timestamp;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+
+    if (seconds < 60) return `${seconds}s ago`;
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return new Date(timestamp).toLocaleString();
+};
+
 export default function CollabTextArea({ roomId, token }: RoomProps) {
     const serverUrl = process.env.NEXT_PUBLIC_COLLAB_WS_URL;
     const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -28,6 +53,7 @@ export default function CollabTextArea({ roomId, token }: RoomProps) {
     const [status, setStatus] = useState<
         "disconnected" | "connecting" | "connected"
     >("disconnected");
+    const [history, setHistory] = useState<EditHistoryRecord[]>([]);
 
     // Initialize Yjs Document and Text Type
     const yDoc = useMemo(() => new Y.Doc(), []);
@@ -102,6 +128,9 @@ export default function CollabTextArea({ roomId, token }: RoomProps) {
 
         socket.on("connect", () => {
             setStatus("connected");
+
+            // Ask backend for last 50 edits
+            socket.emit("collab:history:get", { limit: 50 });
         });
 
         socket.on("disconnect", () => {
@@ -130,6 +159,14 @@ export default function CollabTextArea({ roomId, token }: RoomProps) {
             } finally {
                 isApplyingRemoteUpdate.current = false;
             }
+        });
+
+        socket.on("collab:history", (history: EditHistoryRecord[]) => {
+            setHistory(history);
+        });
+
+        socket.on("collab:history:new", (record: EditHistoryRecord) => {
+            setHistory((prevHistory) => [record, ...prevHistory].slice(0, 50));
         });
 
         socket.on("collab:error", (error: { ok: boolean; message: string }) => {
@@ -161,27 +198,62 @@ export default function CollabTextArea({ roomId, token }: RoomProps) {
     };
 
     return (
-        <div className="border p-4 rounded-lg">
-            <h2 className="font-semibold mb-2">Editor</h2>
-            <textarea
-                ref={textAreaRef}
-                placeholder="Write your code here..."
-                className="w-full h-64 border rounded-lg p-2 font-mono"
-                onInput={onInput}
-                onCompositionStart={() => {
-                    composingRef.current = true;
-                }}
-                onCompositionEnd={() => {
-                    composingRef.current = false;
-                    onInput();
-                }}
-            />
-            <div className="text-xs text-gray-500 mt-2 flex justify-between">
-                <span>
-                    Session: <code>{roomId}</code>
-                    <br />
-                    Connection Status: {status}
-                </span>
+        <div className="flex flex-col gap-6 h-full min-h-0">
+            <div className="border p-4 rounded-lg flex flex-col min-h-0 flex-1">
+                <h2 className="font-semibold mb-2 flex-shrink-0">Editor</h2>
+                <textarea
+                    ref={textAreaRef}
+                    placeholder="Write your code here..."
+                    className="w-full flex-1 min-h-0 border rounded-lg p-2 font-mono resize-none"
+                    onInput={onInput}
+                    onCompositionStart={() => {
+                        composingRef.current = true;
+                    }}
+                    onCompositionEnd={() => {
+                        composingRef.current = false;
+                        onInput();
+                    }}
+                />
+                <div className="text-xs text-gray-500 mt-2 flex justify-between flex-shrink-0">
+                    <span>
+                        Session: <code>{roomId}</code>
+                        <br />
+                        Connection Status: {status}
+                    </span>
+                </div>
+            </div>
+
+            <div className="border p-4 rounded-lg flex flex-col overflow-hidden min-h-0 flex-1">
+                <h2 className="font-semibold mb-2 flex-shrink-0">
+                    Edit History
+                </h2>
+                <div className="flex-1 overflow-y-auto min-h-0">
+                    {history.length === 0 ? (
+                        <p className="text-sm text-gray-500">No edits yet.</p>
+                    ) : (
+                        <ul className="text-sm space-y-2">
+                            {history.map((record, i) => (
+                                <li key={i} className="border-b pb-1">
+                                    <div className="text-xs text-gray-500">
+                                        <strong>{record.userId}</strong> •{" "}
+                                        {formatRelativeTime(record.timestamp)}
+                                    </div>
+                                    {record.changes.map(
+                                        (change: any, j: number) => (
+                                            <div key={j} className="ml-2">
+                                                {change.type === "insert"
+                                                    ? "➕"
+                                                    : "➖"}{" "}
+                                                L{change.line}:C{change.col} →{" "}
+                                                <code>{change.snippet}</code>
+                                            </div>
+                                        )
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
             </div>
         </div>
     );

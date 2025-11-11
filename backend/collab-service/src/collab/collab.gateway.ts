@@ -9,8 +9,11 @@ import { Socket, Server } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { CollabService } from './collab.service';
 import { toUint8 } from './helpers';
+import { BurstBuffer } from './types';
+import { TYPE_BURST_MS, MAX_BURST_MS, ALLOWED_LANGUAGES } from './helpers';
+import { flushBurst } from './burst-manager';
 
-const ALLOWED_LANGUAGES = new Set(['python', 'javascript', 'java', 'cpp', 'c']);
+const bursts = new Map<string, BurstBuffer>(); // key = `${sessionId}:${userId}`
 
 @WebSocketGateway({ namespace: '/collab', transports: ['websocket'] })
 export class CollabGateway {
@@ -89,10 +92,85 @@ export class CollabGateway {
     const update = toUint8(updateData);
 
     // apply to server doc
-    await this.collab.applyAndPersistUpdate(sessionId, update);
+    const historyRecord = await this.collab.applyAndPersistUpdate(
+      sessionId,
+      update,
+      client.data.userId,
+    );
 
     // broadcast to other clients in the same session
     client.to('session:' + sessionId).emit('collab:update', update);
+
+    if (historyRecord && historyRecord.changes.length > 0) {
+      const key = `${sessionId}:${client.data.userId}`;
+      const now = Date.now();
+      const existing = bursts.get(key);
+
+      if (!existing) {
+        const timer = setTimeout(
+          () => flushBurst(this.server, sessionId, key, bursts),
+          TYPE_BURST_MS,
+        );
+        bursts.set(key, {
+          timer,
+          startedAt: now,
+          lastAt: now,
+          lastLine: historyRecord.changes[0]?.line ?? null,
+          records: [historyRecord],
+        });
+      } else {
+        const sameLine =
+          existing.lastLine !== null &&
+          historyRecord.changes.length &&
+          historyRecord.changes[0].line === existing.lastLine;
+
+        const withinBurst = now - existing.lastAt <= TYPE_BURST_MS;
+        const withinMax = now - existing.startedAt <= MAX_BURST_MS;
+
+        if (withinBurst && (sameLine || true) && withinMax) {
+          // extend current burst
+          existing.records.push(historyRecord);
+          existing.lastAt = now;
+          existing.lastLine =
+            historyRecord.changes[0]?.line ?? existing.lastLine;
+          if (existing.timer) clearTimeout(existing.timer);
+          existing.timer = setTimeout(
+            () => flushBurst(this.server, sessionId, key, bursts),
+            TYPE_BURST_MS,
+          );
+        } else {
+          // close old burst and start a new one
+          flushBurst(this.server, sessionId, key, bursts);
+          const timer = setTimeout(
+            () => flushBurst(this.server, sessionId, key, bursts),
+            TYPE_BURST_MS,
+          );
+          bursts.set(key, {
+            timer,
+            startedAt: now,
+            lastAt: now,
+            lastLine: historyRecord.changes[0]?.line ?? null,
+            records: [historyRecord],
+          });
+        }
+      }
+    }
+  }
+
+  @SubscribeMessage('collab:history:get')
+  async handleGetHistory(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { limit?: number },
+  ) {
+    const sessionId = client.data.sessionId as string;
+    if (!sessionId) {
+      return;
+    }
+
+    const limit = payload?.limit ?? 50;
+    const history = await this.collab.getHistory(sessionId, limit);
+
+    client.emit('collab:history', history);
   }
 
   @SubscribeMessage('collab:language:set')
@@ -112,6 +190,28 @@ export class CollabGateway {
     this.collab.setLanguage(sessionId, language);
 
     client.to('session:' + sessionId).emit('collab:language', { language });
+  }
+
+  @SubscribeMessage('collab:revert')
+  async handleRevert(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { timestamp: number },
+  ) {
+    const sessionId = client.data.sessionId as string;
+    if (!sessionId) return;
+
+    // run atomic hard-reset
+    const { state, history } = await this.collab.revertHard(
+      sessionId,
+      body.timestamp,
+      client.data.userId,
+    );
+
+    // broadcast a fresh full state
+    this.server.to('session:' + sessionId).emit('collab:state', state);
+
+    // refresh history list
+    this.server.to('session:' + sessionId).emit('collab:history', history);
   }
 
   @SubscribeMessage('collab:awareness')

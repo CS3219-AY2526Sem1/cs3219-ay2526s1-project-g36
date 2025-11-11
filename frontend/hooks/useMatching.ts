@@ -25,6 +25,10 @@ export function useMatching(opts: {
     const [status, setStatus] = useState<
         "idle" | "connecting" | "queued" | "matched"
     >("idle");
+    // returned for backwards compatibility with FindMatchButton
+    const [position, setPosition] = useState<number | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
     const socketRef = useRef<any>(null);
 
     useEffect(() => {
@@ -32,6 +36,7 @@ export function useMatching(opts: {
         socketRef.current = socket;
 
         socket.on("connect", () => {
+            // Only move state to queued if we were connecting
             setStatus((prev) => (prev === "connecting" ? "queued" : prev));
         });
 
@@ -40,7 +45,19 @@ export function useMatching(opts: {
             if (onMatched) {
                 onMatched(data);
             }
+
+            sessionStorage.setItem(
+                `roommeta:${data.roomId}`,
+                JSON.stringify({ matchedUserId: data.matchedUserId })
+            );
+
             router.push(`/room/${data.roomId}`);
+        });
+
+        // optional: if server ever emits queue-snapshot or position in future, handle it here:
+        socket.on("queue-snapshot", (snap: any) => {
+            // no-op for now; keep for forward-compat
+            // could setPosition(...) if server later emits position info
         });
 
         socket.connect();
@@ -48,6 +65,7 @@ export function useMatching(opts: {
         return () => {
             socket.off("connect");
             socket.off("matched");
+            socket.off("queue-snapshot");
         };
     }, [token, onMatched, router]);
 
@@ -66,6 +84,7 @@ export function useMatching(opts: {
                 };
                 socket.emit("join-queue", cleanPayload);
                 console.log("Emitted join-queue with payload:", cleanPayload);
+                // set queued right away to keep UI snappy (server will still emit matched later)
                 setStatus("queued");
             };
 
@@ -73,16 +92,41 @@ export function useMatching(opts: {
                 doEmit();
             } else {
                 socket.connect();
+                // wait a short tick so socket.connect has effect; fine to emit immediately too
                 doEmit();
             }
         },
         [token]
     );
 
+    const leaveQueue = useCallback(() => {
+        const socket = socketRef.current;
+        if (!socket) {
+            setStatus("idle");
+            return;
+        }
+
+        try {
+            // emit the cancel event the backend expects
+            socket.emit("match:cancel");
+            console.log("Emitted match:cancel");
+        } catch (err) {
+            console.warn("Failed to emit match:cancel", err);
+        } finally {
+            // set status back to idle and clear position
+            setStatus("idle");
+            setPosition(null);
+        }
+    }, []);
+
     useEffect(() => {
         return () => {
             const socket = socketRef.current;
             if (socket && socket.connected) {
+                // also tell server we left (best-effort)
+                try {
+                    socket.emit("match:cancel");
+                } catch {}
                 socket.disconnect();
             }
         };
@@ -90,6 +134,9 @@ export function useMatching(opts: {
 
     return {
         status,
+        position,
         joinQueue,
+        leaveQueue,
+        error,
     };
 }

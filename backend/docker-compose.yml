@@ -40,6 +40,17 @@ services:
       - "4001:4001" # host 4001 -> container 3000
     restart: unless-stopped
 
+  qn:
+    build:
+      context: ./qn-service
+      dockerfile: Dockerfile
+    container_name: qn-service
+    env_file:
+      - ./qn-service/.env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
 networks:
   default:
     name: peerprep-net

@@ -1,5 +1,5 @@
 import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({ namespace: '/matching' })
 export class MatchingGateway {
@@ -16,6 +16,23 @@ export class MatchingGateway {
   async handleJoinQueue(client: any, payload: { userId: string; difficulty: string; topics: string[] }) {
     const { v4: uuidv4 } = await import('uuid'); 
     this.enqueue(payload.userId, payload.difficulty, payload.topics, client.id, uuidv4);
+  }
+
+  @SubscribeMessage('match:cancel')
+  handleCancelMatch(client: any) {
+    const removed = this.removeFromQueueBySocketId(client.id);
+    // Keep silent to match previous behaviour (no ack emitted).
+    console.log(`match:cancel from ${client.id} => removed=${removed}`);
+  }
+
+  // Called automatically by socket.io when a client disconnects.
+  handleDisconnect(client: Socket) {
+    const removed = this.removeFromQueueBySocketId(client.id);
+    if (removed) {
+      console.log(`Socket ${client.id} disconnected and was removed from queue`);
+    } else {
+      console.log(`Socket ${client.id} disconnected`);
+    }
   }
 
   private enqueue(
@@ -67,5 +84,16 @@ export class MatchingGateway {
 
       console.log(`Matched users: ${user1.userId} ↔ ${user2.userId} in room ${roomId}`);
     });
+  }
+
+  private removeFromQueueBySocketId(socketId: string): boolean {
+    for (const key of Object.keys(this.queues)) {
+      const idx = this.queues[key].findIndex((u) => u.socketId === socketId);
+      if (idx !== -1) {
+        this.queues[key].splice(idx, 1);
+        return true;
+      }
+    }
+    return false;
   }
 }

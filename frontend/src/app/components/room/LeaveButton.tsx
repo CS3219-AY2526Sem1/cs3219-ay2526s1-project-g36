@@ -2,14 +2,42 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { qnJson } from "../../../../lib/qn";
 
 export default function LeaveButton() {
   const [step, setStep] = useState<"none" | "confirm" | "completed">("none");
   const router = useRouter();
 
-  const handleLeave = async () => {
-    // TODO: collab + user service backend termination/update logic here
-    router.push("/problems");
+  const handleCompletion = async (completed: boolean) => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('currentProblem') : null;
+      const startedAt = typeof window !== 'undefined' ? localStorage.getItem('attemptStart') : null;
+      const question = raw ? JSON.parse(raw) : null;
+      const questionId = question?.id ?? question?.question_id ?? null;
+
+      if (questionId != null) {
+        await qnJson('/attempts', {
+          method: 'POST',
+          body: JSON.stringify({
+            question_id: questionId,
+            status: completed ? 'completed' : 'left',
+            started_at: startedAt || new Date().toISOString(),
+            submitted_at: new Date().toISOString(),
+            question,
+          }),
+        });
+      }
+    } catch (e) {
+      // swallow errors to avoid blocking navigation
+      // console.error('Failed to record attempt', e);
+    } finally {
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('attemptStart');
+        }
+      } catch {}
+      router.push("/problems");
+    }
   };
 
   return (
@@ -68,13 +96,13 @@ export default function LeaveButton() {
             </h3>
             <div className="flex justify-center gap-4">
               <button
-                onClick={handleLeave}
+                onClick={() => handleCompletion(true)}
                 className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition cursor-pointer"
               >
                 Yes
               </button>
               <button
-                onClick={handleLeave}
+                onClick={() => handleCompletion(false)}
                 className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition cursor-pointer"
               >
                 No

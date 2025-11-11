@@ -4,6 +4,7 @@ import Logo from "../common/Logo";
 import NavProblems from "./NavProblems";
 import NavRanking from "./NavRanking";
 import RightActions from "./RightActions";
+import NavHistory from "./NavHistory";
 import { useTheme } from "../../../../context/ThemeContext";
 
 export default function TopNavBar() {
@@ -22,6 +23,7 @@ export default function TopNavBar() {
         <nav className="flex gap-6">
           <NavProblems />
           <NavRanking />
+          <NavHistory />
         </nav>
       </div>
       <RightActions />

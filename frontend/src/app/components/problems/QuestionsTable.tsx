@@ -6,9 +6,10 @@ import { useTheme } from "../../../../context/ThemeContext";
 interface Props {
   questions: any[];
   onSelect: (q: any) => void;
+  startIndex?: number;
 }
 
-export default function QuestionsTable({ questions, onSelect }: Props) {
+export default function QuestionsTable({ questions, onSelect, startIndex = 0 }: Props) {
   const { theme } = useTheme();
 
   return (
@@ -48,7 +49,7 @@ export default function QuestionsTable({ questions, onSelect }: Props) {
       </thead>
       <tbody>
         {questions.map((q, i) => (
-          <QuestionRow key={q.id} question={q} index={i} onSelect={onSelect} />
+          <QuestionRow key={q.id} question={q} index={i + startIndex} onSelect={onSelect} />
         ))}
       </tbody>
     </table>

@@ -8,6 +8,7 @@ import QuestionsTable from "./QuestionsTable";
 interface Props {
   questions: Question[];
   onSelectProblem: (question: Question) => void;
+  startIndex?: number;
 }
 
 type SortDirection = "asc" | "desc" | null;
@@ -17,7 +18,7 @@ interface SortState {
   direction: SortDirection;
 }
 
-export default function FilterPanel({ questions, onSelectProblem }: Props) {
+export default function FilterPanel({ questions, onSelectProblem, startIndex = 0 }: Props) {
   const { theme } = useTheme();
 
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
@@ -143,6 +144,7 @@ export default function FilterPanel({ questions, onSelectProblem }: Props) {
       <QuestionsTable
         questions={filteredAndSortedQuestions}
         onSelect={onSelectProblem}
+        startIndex={startIndex}
       />
     </div>
   );
