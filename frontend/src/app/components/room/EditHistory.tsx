@@ -98,6 +98,7 @@ export default function EditHistory({
         <div
             style={{
                 width: "100%",
+                height: "100%",
                 display: "flex",
                 flexDirection: "column",
                 backgroundColor: theme.card.background,
@@ -105,6 +106,7 @@ export default function EditHistory({
                 borderRadius: 8,
                 padding: 12,
                 overflow: "hidden",
+                minHeight: 0,
             }}
         >
             <h2
