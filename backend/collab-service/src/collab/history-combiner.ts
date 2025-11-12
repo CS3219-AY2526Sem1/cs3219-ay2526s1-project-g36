@@ -71,17 +71,25 @@ export function mergeAdjacent(
   records: EditHistoryRecord[],
 ): EditHistoryRecord[] {
   if (!records.length) return [];
+
   const merged: EditHistoryRecord[] = [];
   let bucket: EditHistoryRecord[] = [records[0]];
 
   const flush = () => {
     if (!bucket.length) return;
     const chron = [...bucket].reverse(); // oldest -> newest
+    const newest = chron[chron.length - 1];
     const userId = chron[0].userId;
-    const timestamp = chron[chron.length - 1].timestamp; // newest timestamp
+
     const all: Change[] = [];
     for (const r of chron) all.push(...r.changes);
-    merged.push({ userId, timestamp, changes: combineChanges(all) });
+
+    merged.push({
+      userId,
+      timestamp: newest.timestamp,
+      updateTimestamp: newest.updateTimestamp ?? newest.timestamp,
+      changes: combineChanges(all),
+    });
     bucket = [];
   };
 
@@ -90,6 +98,7 @@ export function mergeAdjacent(
     const cur = records[i];
     const sameUser = cur.userId === prevNewest.userId;
     const within = prevNewest.timestamp - cur.timestamp <= MERGE_WINDOW_MS;
+
     if (sameUser && within) bucket.unshift(cur);
     else {
       flush();

@@ -202,7 +202,7 @@ export class CollabGateway {
   @SubscribeMessage('collab:revert')
   async handleRevert(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { timestamp: number },
+    @MessageBody() body: { timestamp: number; updateTimestamp?: number },
   ) {
     const sessionId = client.data.sessionId as string;
     if (!sessionId) return;
@@ -212,6 +212,7 @@ export class CollabGateway {
       sessionId,
       body.timestamp,
       client.data.userId,
+      body.updateTimestamp,
     );
 
     // broadcast a fresh full state
