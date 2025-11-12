@@ -1,4 +1,4 @@
-# 🚀 PeerPrep Backend
+# PeerPrep Backend
 
 > **Microservices Architecture for Collaborative Coding Platform**
 
@@ -6,23 +6,23 @@ The PeerPrep backend is a collection of NestJS-based microservices that power a 
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
--   [Overview](#-overview)
--   [Architecture](#-architecture)
--   [Services](#-services)
--   [Tech Stack](#-tech-stack)
--   [Quick Start](#-quick-start)
--   [Docker Setup](#-docker-setup)
--   [Environment Variables](#-environment-variables)
--   [Development Workflow](#-development-workflow)
--   [Service Documentation](#-service-documentation)
--   [Network & Ports](#-network--ports)
--   [Contributors](#-contributors)
+-   [Overview](#overview)
+-   [Architecture](#architecture)
+-   [Services](#services)
+-   [Tech Stack](#tech-stack)
+-   [Quick Start](#quick-start)
+-   [Docker Setup](#docker-setup)
+-   [Environment Variables](#environment-variables)
+-   [Development Workflow](#development-workflow)
+-   [Service Documentation](#service-documentation)
+-   [Network & Ports](#network--ports)
+-   [Contributors](#contributors)
 
 ---
 
-## 🌟 Overview
+## Overview
 
 The backend consists of **four independent microservices**, each responsible for a specific domain:
 
@@ -35,7 +35,7 @@ All services are containerized with Docker and orchestrated via Docker Compose f
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TB
@@ -107,7 +107,7 @@ sequenceDiagram
 
 ---
 
-## 📦 Services
+## Services
 
 ### Service Overview Table
 
@@ -120,7 +120,7 @@ sequenceDiagram
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Core Technologies
 
@@ -168,7 +168,7 @@ sequenceDiagram
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -213,7 +213,7 @@ npm run start:dev
 
 ---
 
-## 🐳 Docker Setup
+## Docker Setup
 
 ### Using Docker Compose (Recommended)
 
@@ -269,7 +269,7 @@ networks:
 
 ---
 
-## 🔐 Environment Variables
+## Environment Variables
 
 ### Common Variables
 
@@ -372,7 +372,7 @@ SUPABASE_JWT_SECRET=your-supabase-jwt-secret-here
 
 ---
 
-## 💻 Development Workflow
+## Development Workflow
 
 ### Development Commands
 
@@ -465,7 +465,7 @@ npx prisma studio
 
 ---
 
-## 📚 Service Documentation
+## Service Documentation
 
 Detailed documentation for each service is available in their respective directories:
 
@@ -521,7 +521,7 @@ See [User Service API](./user-service/docs/API.md) for detailed endpoint specs.
 
 ---
 
-## 🌐 Network & Ports
+## Network & Ports
 
 ### Port Summary
 
@@ -555,7 +555,7 @@ http://qn:3000/questions
 
 ---
 
-## 👥 Contributors
+## Contributors
 
 | Name           | Role                               | Services              |
 | -------------- | ---------------------------------- | --------------------- |
