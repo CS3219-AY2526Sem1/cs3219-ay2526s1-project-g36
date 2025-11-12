@@ -10,6 +10,7 @@ import MonacoCollabTextArea from "../../components/room/MonacoCollabTextArea";
 import EditHistory from "../../components/room/EditHistory";
 import LeaveButton from "../../components/room/LeaveButton";
 import { Session } from "@supabase/supabase-js";
+import { qnJson } from "../../../../lib/qn";
 
 type Props = {
     params: Promise<{ roomId: string }>;
@@ -29,6 +30,7 @@ export default function RoomPage({ params }: Props) {
     } | null>(null);
     const [ownUserId, setOwnUserId] = useState<string | null>(null);
     const [partnerId, setPartnerId] = useState<string | null>(null);
+    const [canonicalQuestionId, setCanonicalQuestionId] = useState<number | null>(null);
     const [ownName, setOwnName] = useState<string | null>(null);
     const [partnerName, setPartnerName] = useState<string | null>(null);
 
@@ -44,6 +46,10 @@ export default function RoomPage({ params }: Props) {
                 if (meta) {
                     const parsed = JSON.parse(meta);
                     setPartnerId(parsed.matchedUserId || null);
+                    if (parsed.questionId !== undefined && parsed.questionId !== null) {
+                        const qid = Number(parsed.questionId);
+                        if (!Number.isNaN(qid)) setCanonicalQuestionId(qid);
+                    }
                 }
             } catch (e) {
                 console.error("Error parsing room metadata:", e);
@@ -65,27 +71,50 @@ export default function RoomPage({ params }: Props) {
         loadSession();
     }, [ok]);
 
-    // Load selected problem from localStorage (set when user clicked Find Match)
+    // Load problem: prefer canonicalQuestionId (from matched event), else fallback to localStorage selection
     useEffect(() => {
-        try {
-            const raw =
-                typeof window !== "undefined"
-                    ? localStorage.getItem("currentProblem")
-                    : null;
-            if (raw) {
-                const p = JSON.parse(raw);
-                if (p && typeof p === "object") {
-                    setProblem({
-                        title: p.name || p.title || "Problem",
-                        description: p.description || "",
-                        difficulty: String(p.difficulty || "medium"),
-                        acceptanceRate:
-                            p.acceptanceRate ?? p.acceptance_rate ?? undefined,
-                    });
-                }
+        let cancelled = false;
+        const loadFromQn = async (id: number) => {
+            try {
+                const doc = await qnJson<any>(`/questions/${id}`);
+                if (cancelled) return;
+                setProblem({
+                    title: doc.title || doc.name || "Problem",
+                    description: doc.description || "",
+                    difficulty: String(doc.difficulty || "medium"),
+                    acceptanceRate: doc.acceptance_rate ?? doc.acceptanceRate ?? undefined,
+                });
+            } catch (e) {
+                console.warn("Failed to load canonical question; falling back to local selection.", e);
+                if (!cancelled) loadFromLocal();
             }
-        } catch {}
-    }, []);
+        };
+        const loadFromLocal = () => {
+            try {
+                const raw = typeof window !== "undefined" ? localStorage.getItem("currentProblem") : null;
+                if (raw) {
+                    const p = JSON.parse(raw);
+                    if (p && typeof p === "object") {
+                        setProblem({
+                            title: p.name || p.title || "Problem",
+                            description: p.description || "",
+                            difficulty: String(p.difficulty || "medium"),
+                            acceptanceRate: p.acceptanceRate ?? p.acceptance_rate ?? undefined,
+                        });
+                    }
+                }
+            } catch {}
+        };
+
+        if (canonicalQuestionId) {
+            loadFromQn(canonicalQuestionId);
+        } else {
+            loadFromLocal();
+        }
+        return () => {
+            cancelled = true;
+        };
+    }, [canonicalQuestionId]);
 
     // Record attempt start time when entering room
     useEffect(() => {

@@ -19,6 +19,7 @@ interface QueueUser {
   enqueuedAt: number;
   totalPoints?: number; // fetched from supabase on enqueue
   difficulty: Difficulty;
+  questionId?: number | string; // optional: selected question id by the user
 }
 
 @WebSocketGateway({ namespace: '/matching', cors: { origin: '*' } })
@@ -47,10 +48,14 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
   // Supabase client (may be null in non-supabase environments)
   private supabase: SupabaseClient | null = null;
 
-  // Tweakable constants:
+  // Tweakable constants (declared in-file; no env overrides):
   private POINTS_TOLERANCE = 10; // +/- points tolerance for points-based matching
-  private BRUTE_FORCE_AFTER_MS = 5 * 60 * 1000; // 5 minutes
-  private POINTS_MATCH_PRIORITY_WINDOW_MS = 30 * 1000; // optional: consider points earlier after X seconds (not required)
+  // Time-gated stages so you can observe priority order in action:
+  private STAGE1_DELAY_MS = 3_000;  // enable: same difficulty + shared topic after 3s
+  private STAGE2_DELAY_MS = 6_000;  // enable: same difficulty (ignore topics) after 6s
+  private STAGE3_DELAY_MS = 9_000;  // enable: similar points (± tolerance) after 9s
+  private BRUTE_FORCE_AFTER_MS = 19_000; // enable: brute force ~10s after stage 3
+  private POINTS_MATCH_PRIORITY_WINDOW_MS = 30_000; // unused; kept for future tuning
 
   constructor() {
     const url = process.env.SUPABASE_URL;
@@ -61,6 +66,8 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
       this.supabase = null;
       this.logger.warn('Supabase not configured (SUPABASE_URL/SUPABASE_KEY missing). Profile point lookups will be skipped.');
     }
+
+    // Matching tolerances are fixed in-file for this demo; no env overrides.
   }
 
   handleConnection(client: Socket) {
@@ -79,7 +86,7 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
   @SubscribeMessage('join-queue')
   async handleJoinQueue(
     client: Socket,
-    payload: { userId: string; difficulty: Difficulty; topics: string[] },
+    payload: { userId: string; difficulty: Difficulty; topics: string[]; questionId?: number | string },
   ) {
     const { userId, difficulty, topics } = payload;
     if (!userId || !difficulty || !Array.isArray(topics)) {
@@ -113,7 +120,7 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
       totalPoints = 0;
     }
 
-    this.enqueue(userId, difficulty, topics, client.id, totalPoints);
+    this.enqueue(userId, difficulty, topics, client.id, totalPoints, payload.questionId);
   }
 
   @SubscribeMessage('match:cancel')
@@ -129,9 +136,10 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
     topics: string[],
     socketId: string,
     totalPoints?: number,
+    questionId?: number | string,
   ): void {
     const now = Date.now();
-    const user: QueueUser = { userId, topics, socketId, enqueuedAt: now, totalPoints, difficulty };
+    const user: QueueUser = { userId, topics, socketId, enqueuedAt: now, totalPoints, difficulty, questionId };
     this.queues[difficulty].push(user);
 
     // Emit joined-queue exactly as before (frontend compatibility)
@@ -166,6 +174,7 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
     if (!stillHere) return;
 
     const now = Date.now();
+    const waitingMs = now - user.enqueuedAt;
 
     // helper to gather candidates excluding the user itself
     const gatherCandidates = () => {
@@ -191,11 +200,15 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
       return [difficultyDistance, -numCommonTopics, -waitingSeconds] as const;
     };
 
-    // 1) Try same difficulty + at least one common topic
+    // Time-gated staged matching
+    // 1) Try same difficulty + at least one common topic (only after STAGE1_DELAY_MS)
+    if (waitingMs < this.STAGE1_DELAY_MS) {
+      return; // too early to attempt any matching
+    }
     let best: { cand: QueueUser; candDiff: Difficulty } | null = null;
     let bestScore: readonly [number, number, number] | null = null;
 
-  for (const { candidate: cand, diff: candDiff } of candidates) {
+    for (const { candidate: cand, diff: candDiff } of candidates) {
       if (candDiff !== user.difficulty) continue;
       const common = this.countCommonTopics(user.topics, cand.topics);
       if (common <= 0) continue;
@@ -208,6 +221,9 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
 
     // 2) If none, try same difficulty regardless of topics
     if (!best) {
+      if (waitingMs < this.STAGE2_DELAY_MS) {
+        return; // do not relax to stage 2 until the delay passes
+      }
       for (const { candidate: cand, diff: candDiff } of candidates) {
         if (candDiff !== user.difficulty) continue;
         const sc = scoreTuple(user, user.difficulty, cand, candDiff);
@@ -220,11 +236,14 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
 
     // 3) If still none, try points-based: find candidate(s) with roughly same totalPoints (± tolerance)
     if (!best) {
+      if (waitingMs < this.STAGE3_DELAY_MS) {
+        return; // do not consider points-based until stage 3 delay
+      }
       const userPoints = typeof user.totalPoints === 'number' ? user.totalPoints : undefined;
       if (typeof userPoints === 'number') {
         // attempt to prefer same difficulty first, then others
         let candidatesByPoints: { cand: QueueUser; candDiff: Difficulty }[] = [];
-  for (const { candidate: cand, diff: candDiff } of candidates) {
+        for (const { candidate: cand, diff: candDiff } of candidates) {
           if (typeof cand.totalPoints !== 'number') continue;
           if (Math.abs((cand.totalPoints ?? 0) - userPoints) <= this.POINTS_TOLERANCE) {
             candidatesByPoints.push({ cand, candDiff });
@@ -247,9 +266,9 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    // 4) If still none and this user has been waiting more than BRUTE_FORCE_AFTER_MS, do brute force across all candidates
-    if (!best && now - user.enqueuedAt >= this.BRUTE_FORCE_AFTER_MS) {
-  for (const { candidate: cand, diff: candDiff } of candidates) {
+    // 4) If still none and past BRUTE_FORCE_AFTER_MS, do brute force across all candidates
+    if (!best && waitingMs >= this.BRUTE_FORCE_AFTER_MS) {
+      for (const { candidate: cand, diff: candDiff } of candidates) {
         const sc = scoreTuple(user, user.difficulty, cand, candDiff);
         if (!bestScore || this.tupleIsBetter(sc, bestScore)) {
           best = { cand, candDiff };
@@ -263,7 +282,12 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const partner = best.cand;
+  const partner = best.cand;
+
+  // Determine canonical questionId: pick the earlier enqueued user's question if provided, else fallback
+  const first = user.enqueuedAt <= partner.enqueuedAt ? user : partner;
+  const second = first === user ? partner : user;
+  const canonicalQuestionId = first.questionId ?? second.questionId ?? undefined;
 
     // Remove both (check return values) - if removal fails, another thread matched them
     const removedUser = this.removeFromQueueBySocketId(user.socketId);
@@ -285,12 +309,14 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
         matchedUserId: partner.userId,
         matchedUserPoints: partner.totalPoints,
         yourPoints: user.totalPoints,
+        questionId: canonicalQuestionId,
       });
       this.server.to(partner.socketId).emit('matched', {
         roomId,
         matchedUserId: user.userId,
         matchedUserPoints: user.totalPoints,
         yourPoints: partner.totalPoints,
+        questionId: canonicalQuestionId,
       });
     } catch (err) {
       this.logger.warn(`Failed to emit matched event: ${err}`);
@@ -330,62 +356,16 @@ export class MatchingGateway implements OnModuleInit, OnModuleDestroy {
    * Uses simpler score but could be swapped to the same strategy above if you want.
    */
   public runBatchMatching() {
-    const allUsers: { user: QueueUser; diff: Difficulty }[] = [];
+    // Use the same staged matching logic as per-user matching to ensure consistent priority ordering.
+    // Iterate over a snapshot of the queues to avoid mutation issues while matching.
+    const snapshot: QueueUser[] = [];
     for (const d of Object.keys(this.queues) as Difficulty[]) {
-      for (const u of this.queues[d]) allUsers.push({ user: u, diff: d });
+      for (const u of this.queues[d]) snapshot.push(u);
     }
 
-    const now = Date.now();
-    const taken = new Set<string>();
-
-    const scoreForPair = (a: QueueUser, aDiff: Difficulty, b: QueueUser, bDiff: Difficulty) => {
-      const difficultyDistance = Math.abs(this.difficultyIndex[aDiff] - this.difficultyIndex[bDiff]);
-      const numCommonTopics = this.countCommonTopics(a.topics, b.topics);
-      const waitingSeconds = ((now - a.enqueuedAt) + (now - b.enqueuedAt)) / 1000;
-      return [difficultyDistance, -numCommonTopics, -waitingSeconds] as const;
-    };
-
-    for (const { user: u, diff: udiff } of allUsers) {
-      if (taken.has(u.socketId)) continue;
-
-      let bestCand: QueueUser | null = null;
-      let bestCandDiff: Difficulty | null = null;
-      let bestScore: readonly [number, number, number] | null = null;
-
-      for (const { user: v, diff: dv } of allUsers) {
-        if (v.socketId === u.socketId) continue;
-        if (taken.has(v.socketId)) continue;
-
-        const sc = scoreForPair(u, udiff, v, dv);
-        if (!bestScore || this.tupleIsBetter(sc, bestScore)) {
-          bestScore = sc;
-          bestCand = v;
-          bestCandDiff = dv;
-        }
-      }
-
-      if (bestCand && bestCandDiff) {
-        const removedA = this.removeFromQueueBySocketId(u.socketId);
-        const removedB = this.removeFromQueueBySocketId(bestCand.socketId);
-        if (removedA && removedB) {
-          taken.add(u.socketId);
-          taken.add(bestCand.socketId);
-          const roomId = uuidv4();
-          this.server.to(u.socketId).emit('matched', {
-            roomId,
-            matchedUserId: bestCand.userId,
-            matchedUserPoints: bestCand.totalPoints,
-            yourPoints: u.totalPoints,
-          });
-          this.server.to(bestCand.socketId).emit('matched', {
-            roomId,
-            matchedUserId: u.userId,
-            matchedUserPoints: u.totalPoints,
-            yourPoints: bestCand.totalPoints,
-          });
-          this.logger.log(`Batch matched: ${u.userId} ↔ ${bestCand.userId} (score ${JSON.stringify(bestScore)})`);
-        }
-      }
+    for (const u of snapshot) {
+      // tryMatchForUser internally checks if the user is still in the queue and will no-op otherwise.
+      this.tryMatchForUser(u);
     }
   }
 

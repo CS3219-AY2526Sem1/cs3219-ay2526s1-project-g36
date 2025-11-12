@@ -8,11 +8,13 @@ type JoinPayload = {
     userId: string;
     difficulty: string;
     topics: string[];
+    questionId?: number | string; // optional: selected question id to propose
 };
 
 type matchResult = {
     roomId: string;
     matchedUserId: string;
+    questionId?: number | string;
 };
 
 export function useMatching(opts: {
@@ -48,7 +50,7 @@ export function useMatching(opts: {
 
             sessionStorage.setItem(
                 `roommeta:${data.roomId}`,
-                JSON.stringify({ matchedUserId: data.matchedUserId })
+                JSON.stringify({ matchedUserId: data.matchedUserId, questionId: data.questionId })
             );
 
             router.push(`/room/${data.roomId}`);
@@ -77,11 +79,12 @@ export function useMatching(opts: {
 
             const doEmit = () => {
                 // normalize payload just in case
-                const cleanPayload = {
+                const cleanPayload: any = {
                     userId: payload.userId,
                     difficulty: payload.difficulty.toLowerCase().trim(),
                     topics: payload.topics.map((t) => t.trim()),
                 };
+                if (payload.questionId !== undefined) cleanPayload.questionId = payload.questionId;
                 socket.emit("join-queue", cleanPayload);
                 console.log("Emitted join-queue with payload:", cleanPayload);
                 // set queued right away to keep UI snappy (server will still emit matched later)
