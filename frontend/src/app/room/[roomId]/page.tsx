@@ -136,21 +136,20 @@ export default function RoomPage({ params }: Props) {
 
         const userServiceUrl = process.env.NEXT_PUBLIC_USER_SERVICE_URL;
         if (!userServiceUrl) {
-            console.warn('NEXT_PUBLIC_USER_SERVICE_URL is not set. profile fetches will fail.');
+            console.warn(
+                "NEXT_PUBLIC_USER_SERVICE_URL is not set. profile fetches will fail."
+            );
             // allow rendering the room even if the user-service URL is missing
             setLoading(false);
             return;
         }
 
         const fetchOwnName = async () => {
-            const response = await fetch(
-                    `${userServiceUrl}/profile/me`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${session?.access_token}`,
-                    },
-                }
-            );
+            const response = await fetch(`${userServiceUrl}/profile/me`, {
+                headers: {
+                    Authorization: `Bearer ${session?.access_token}`,
+                },
+            });
             if (!response.ok) {
                 return;
             }
@@ -160,7 +159,7 @@ export default function RoomPage({ params }: Props) {
 
         const fetchPartnerName = async () => {
             const response = await fetch(
-                    `${userServiceUrl}/profile/username?userId=${partnerId}`,
+                `${userServiceUrl}/profile/username?userId=${partnerId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${session?.access_token}`,
@@ -228,9 +227,15 @@ export default function RoomPage({ params }: Props) {
             </div>
 
             {token && (
-                <div className="flex flex-row flex-grow overflow-hidden" style={{ minHeight: 0 }}>
+                <div
+                    className="flex flex-row flex-grow overflow-hidden"
+                    style={{ minHeight: 0 }}
+                >
                     {/* Left column: question card + editor */}
-                    <div className="flex flex-col flex-grow overflow-hidden" style={{ minHeight: 0 }}>
+                    <div
+                        className="flex flex-col flex-grow overflow-hidden"
+                        style={{ minHeight: 0 }}
+                    >
                         <div style={{ zIndex: 2 }}>
                             <QuestionDropdown
                                 title={problem?.title}
@@ -244,17 +249,38 @@ export default function RoomPage({ params }: Props) {
                             />
                         </div>
 
-                        <div className="flex-grow h-full overflow-hidden" style={{ minWidth: 300 }}>
-                            <MonacoCollabTextArea roomId={roomId} token={token} ownUserId={ownUserId!} ownName={ownName ?? "You"} partnerName={partnerName ?? "Partner"} showHistory={false} />
+                        <div
+                            className="flex-grow h-full overflow-hidden"
+                            style={{ minWidth: 300 }}
+                        >
+                            <MonacoCollabTextArea
+                                roomId={roomId}
+                                token={token}
+                                ownUserId={ownUserId!}
+                                ownName={ownName ?? "You"}
+                                partnerName={partnerName ?? "Partner"}
+                                showHistory={false}
+                            />
                         </div>
                     </div>
 
-                    {/* Right column: Edit history (fixed) */}
-                    <div style={{ width: 340, minWidth: 280, marginLeft: 12 }}>
-                        {/* Make the edit history fill the viewport height so it appears to occupy the full right side */}
-                        <div style={{ position: "sticky", top: 0, alignSelf: "start", height: "100vh", overflow: "auto", boxSizing: "border-box", paddingTop: 32 }}>
-                            <EditHistory roomId={roomId} token={token} ownUserId={ownUserId!} ownName={ownName} partnerName={partnerName} />
-                        </div>
+                    {/* Right column: Edit history */}
+                    <div
+                        className="flex flex-col overflow-hidden"
+                        style={{
+                            width: 340,
+                            minWidth: 280,
+                            marginLeft: 12,
+                            minHeight: 0,
+                        }}
+                    >
+                        <EditHistory
+                            roomId={roomId}
+                            token={token}
+                            ownUserId={ownUserId!}
+                            ownName={ownName}
+                            partnerName={partnerName}
+                        />
                     </div>
                 </div>
             )}

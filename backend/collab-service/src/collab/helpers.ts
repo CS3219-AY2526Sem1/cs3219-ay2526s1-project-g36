@@ -4,6 +4,7 @@ export const MAX_BURST_MS = 5000; // safety cap: flush even if never paused
 export const SNAPSHOT_PREFIX = 'snapshot:';
 export const UPDATE_PREFIX = 'update:';
 export const HISTORY_PREFIX = 'history:';
+export const SNAPSHOT_META_PREFIX = 'snapshotmeta:';
 
 export const SNAPSHOT_INTERVAL_MS = 30000; // 30 seconds
 export const OPERATIONS_THRESHOLD = 200;

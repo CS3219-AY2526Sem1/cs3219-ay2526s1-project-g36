@@ -11,10 +11,11 @@ import { Server } from 'socket.io';
 export function mergeRecords(records: EditHistoryRecord[]): EditHistoryRecord {
   const userId = records[0].userId;
   const timestamp = records[records.length - 1].timestamp;
+  const updateTimestamp = records[records.length - 1].updateTimestamp;
   const all: Change[] = [];
   for (const r of records) all.push(...r.changes);
   const changes = combineChanges(all);
-  return { userId, timestamp, changes };
+  return { userId, timestamp, updateTimestamp, changes };
 }
 
 export function flushBurst(

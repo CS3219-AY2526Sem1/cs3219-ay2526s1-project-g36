@@ -10,6 +10,7 @@ export type Change = {
 export type EditHistoryRecord = {
   userId: string;
   timestamp: number;
+  updateTimestamp?: number;
   changes: Change[];
 };
 

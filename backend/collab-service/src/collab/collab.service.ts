@@ -17,6 +17,7 @@ import {
   PRUNE_THRESHOLD_MS,
   SNAPSHOT_INTERVAL_MS,
   SNAPSHOT_PREFIX,
+  SNAPSHOT_META_PREFIX,
   UPDATE_PREFIX,
 } from './helpers';
 import {
@@ -182,6 +183,7 @@ export class CollabService {
         historyRecord = {
           userId,
           timestamp: now,
+          updateTimestamp: now,
           changes,
         };
         await this.db.put(
@@ -200,7 +202,9 @@ export class CollabService {
       await this.writeSnapshotToDb(sessionId, session);
       session.numberOfOperations = 0;
       session.lastSnapshotAt = now;
-      await this.pruneOldUpdates(sessionId, now - PRUNE_THRESHOLD_MS);
+      const { ts: snapTs } = await this.getLatestSnapshotInfo(sessionId);
+      const threshold = Math.min(now - PRUNE_THRESHOLD_MS, snapTs ?? Infinity);
+      await this.pruneOldUpdates(sessionId, threshold);
     }
 
     return historyRecord;
@@ -208,7 +212,12 @@ export class CollabService {
 
   async writeSnapshotToDb(sessionId: string, session: SessionState) {
     const state = Y.encodeStateAsUpdate(session.doc);
+    const now = Date.now();
     await this.db.put(SNAPSHOT_PREFIX + sessionId, state);
+    await this.db.put(
+      SNAPSHOT_META_PREFIX + sessionId,
+      new TextEncoder().encode(JSON.stringify({ ts: now })),
+    );
     this.log.log(`Wrote snapshot for session ${sessionId}`);
   }
 
@@ -250,7 +259,11 @@ export class CollabService {
     )) {
       if (count++ >= fetchLimit) break;
       try {
-        raw.push(JSON.parse(new TextDecoder().decode(val)));
+        const row = JSON.parse(
+          new TextDecoder().decode(val),
+        ) as EditHistoryRecord;
+        row.updateTimestamp ??= row.timestamp; // for legacy records
+        raw.push(row);
       } catch (error) {
         this.log.error(
           `Failed to parse history record for session ${sessionId}: ${error}`,
@@ -264,21 +277,37 @@ export class CollabService {
 
   async buildDocAt(sessionId: string, timestamp: number): Promise<Y.Doc> {
     const doc = new Y.Doc();
+    const { ts: snapTs, state: snapState } =
+      await this.getLatestSnapshotInfo(sessionId);
+
+    if (snapState && snapTs !== null && snapTs <= timestamp) {
+      try {
+        Y.applyUpdate(doc, snapState);
+      } catch (e) {
+        this.log.error(`Failed to apply snapshot for ${sessionId}: ${e}`);
+      }
+    }
+
     const base = `${UPDATE_PREFIX}${sessionId}:`;
-    const upperBound = `${UPDATE_PREFIX}${sessionId}:${String(timestamp).padStart(13, '0')}\xFF`;
+    const lower =
+      snapTs !== null && snapTs <= timestamp
+        ? `${UPDATE_PREFIX}${sessionId}:${String(snapTs).padStart(13, '0')}\x00` // just above snapshot
+        : base;
+    const upper = `${UPDATE_PREFIX}${sessionId}:${String(timestamp).padStart(13, '0')}\xFF`;
 
     for await (const [key, val] of this.db.iterator({
-      gte: base,
-      lt: upperBound,
+      gte: lower,
+      lt: upper,
     })) {
       try {
         Y.applyUpdate(doc, val);
       } catch (error) {
         this.log.error(
-          `Failed to apply update ${key} for session ${sessionId}: ${error}`,
+          `Failed to apply update ${key} for ${sessionId}: ${error}`,
         );
       }
     }
+    this.log.debug(`[buildDocAt] using snapTs=${snapTs} targetTs=${timestamp}`);
     return doc;
   }
 
@@ -389,12 +418,17 @@ export class CollabService {
     sessionId: string,
     targetTimestamp: number,
     userId: string,
+    exactUpdateTimestamp?: number,
   ): Promise<{ state: Uint8Array; history: EditHistoryRecord[] }> {
     this.beginRevertSession(sessionId);
 
     try {
+      const effectiveTimestamp =
+        exactUpdateTimestamp ??
+        (await this.getEffectiveUpdateTs(sessionId, targetTimestamp));
+
       // build target doc from DB to state to revert to
-      const targetDoc = await this.buildDocAt(sessionId, targetTimestamp);
+      const targetDoc = await this.buildDocAt(sessionId, effectiveTimestamp);
       const targetText = targetDoc.getText('content').toString();
 
       // replace in memory doc
@@ -411,7 +445,7 @@ export class CollabService {
       }, 'revert-hard');
 
       // prune forward in DB
-      await this.pruneForwardHistory(sessionId, targetTimestamp);
+      await this.pruneForwardHistory(sessionId, effectiveTimestamp);
 
       // snapshot new HEAD
       await this.writeSnapshotToDb(sessionId, session);
@@ -424,11 +458,11 @@ export class CollabService {
       const markerRecord: EditHistoryRecord = {
         userId,
         timestamp: now,
+        updateTimestamp: effectiveTimestamp,
         changes: [
           {
             type: 'insert',
             line: 1,
-
             col: 1,
             snippet: '[Reverted to this version]',
           },
@@ -442,9 +476,50 @@ export class CollabService {
       // return full state and refreshed history
       const state = Y.encodeStateAsUpdate(session.doc);
       const history = await this.getHistory(sessionId, 50);
+      this.log.debug(
+        `[revertHard] target=${targetTimestamp} effective=${effectiveTimestamp}`,
+      );
       return { state, history };
     } finally {
       this.endRevertSession(sessionId);
+    }
+  }
+
+  async getEffectiveUpdateTs(
+    sessionId: string,
+    historyTimestamp: number,
+  ): Promise<number> {
+    const base = `${UPDATE_PREFIX}${sessionId}:`;
+    const upper = `${UPDATE_PREFIX}${sessionId}:${String(historyTimestamp).padStart(13, '0')}\xFF`;
+
+    let lastTimestamp: number | null = null;
+    for await (const [key] of this.db.iterator({ gte: base, lt: upper })) {
+      const parts = key.split(':');
+      const timestamp = Number(parts[2]);
+      if (!Number.isNaN(timestamp)) lastTimestamp = timestamp;
+    }
+    return lastTimestamp ?? 0;
+  }
+
+  async getLatestSnapshotInfo(
+    sessionId: string,
+  ): Promise<{ ts: number | null; state: Uint8Array | null }> {
+    try {
+      const metaRaw = await this.db.get(SNAPSHOT_META_PREFIX + sessionId);
+      const parsed = JSON.parse(new TextDecoder().decode(metaRaw)) as {
+        ts?: number;
+      };
+      const ts =
+        typeof parsed.ts === 'number' && Number.isFinite(parsed.ts)
+          ? parsed.ts
+          : null;
+
+      const snap = await this.db.get(SNAPSHOT_PREFIX + sessionId);
+      if (!snap || snap.byteLength === 0) return { ts: null, state: null };
+
+      return { ts, state: snap };
+    } catch {
+      return { ts: null, state: null };
     }
   }
 
