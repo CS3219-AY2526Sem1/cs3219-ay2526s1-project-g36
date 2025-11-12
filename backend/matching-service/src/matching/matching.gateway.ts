@@ -1,3 +1,9 @@
+/*
+AI Assistance Disclosure:
+Tool: GitHub Copilot Chat (OpenAI), date: 2025-11-10
+Scope: Implemented Socket.IO matching gateway with in-memory queues per difficulty, topic-aware and points-tolerant matching, immediate per-user matching, periodic batch matching, optional Supabase lookups, queue snapshot, and cancel handling.
+Author review: Verified event contracts ("joined-queue", "matched", "queue-snapshot") for backward compatibility, added concurrency guards when removing from queues, tuned tolerances/timeouts, and added logging and error handling.
+*/
 import { Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
