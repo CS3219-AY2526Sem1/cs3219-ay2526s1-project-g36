@@ -1,412 +1,567 @@
 # PeerPrep Backend
 
-This is the backend infrastructure for the PeerPrep platform - a collaborative peer learning system that connects students for technical interview preparation. The backend consists of multiple microservices orchestrated using Docker Compose.
+> **Microservices Architecture for Collaborative Coding Platform**
 
-## Architecture Overview
+The PeerPrep backend is a collection of NestJS-based microservices that power a real-time collaborative coding platform. It handles user authentication, question management, peer matching, and live collaborative code editing.
 
-The backend is built using a microservices architecture with the following services:
+---
 
-### 🎯 **Matching Service** (Port 3001)
+## Table of Contents
 
-A NestJS-based service that handles user matching logic for pairing students based on their preferences, skill levels, and availability. Features include:
+-   [Overview](#overview)
+-   [Architecture](#architecture)
+-   [Services](#services)
+-   [Tech Stack](#tech-stack)
+-   [Quick Start](#quick-start)
+-   [Docker Setup](#docker-setup)
+-   [Environment Variables](#environment-variables)
+-   [Development Workflow](#development-workflow)
+-   [Service Documentation](#service-documentation)
+-   [Network & Ports](#network--ports)
+-   [Contributors](#contributors)
 
--   Real-time matching via WebSocket
--   Queue management for waiting users
--   Matchmaking algorithms
+---
 
-### 🤝 **Collaboration Service** (Port 3002)
+## Overview
 
-A NestJS-based real-time collaboration service that enables:
+The backend consists of **four independent microservices**, each responsible for a specific domain:
 
--   Shared code editing sessions using Yjs and LevelDB
--   WebSocket-based real-time communication
--   Chat functionality between matched users
--   Session persistence and recovery
+1. **Question Service** – Manages coding questions, search, filtering, and user attempt tracking
+2. **User Service** – Handles user authentication, profiles, and authorization via Supabase
+3. **Matching Service** – Real-time WebSocket-based peer matching by difficulty and topic
+4. **Collaboration Service** – Real-time collaborative code editing using Yjs CRDTs and Socket.IO
 
-### 📊 **API Service** (Separate)
+All services are containerized with Docker and orchestrated via Docker Compose for seamless local development and deployment.
 
-The main REST API service built with NestJS, providing:
+---
 
--   User authentication and profile management
--   Question bank management
--   User data and progress tracking
--   Integration with Supabase and MongoDB
+## Architecture
 
-## Technology Stack
+```mermaid
+graph TB
+    FE[Frontend - Next.js<br/>Port 4000]
 
--   **Framework**: NestJS (Node.js)
--   **Real-time Communication**: Socket.IO
--   **Database**: LevelDB (for collaboration state), MongoDB, PostgreSQL (via Supabase)
--   **Authentication**: JWT with Supabase
--   **Containerization**: Docker & Docker Compose
--   **Language**: TypeScript
+    subgraph Backend Microservices
+        QN[Question Service<br/>NestJS + MongoDB<br/>Port 3000]
+        USER[User Service<br/>NestJS + Prisma + PostgreSQL<br/>Port 4001]
+        MATCH[Matching Service<br/>NestJS + Socket.IO<br/>Port 3001]
+        COLLAB[Collab Service<br/>NestJS + Yjs + LevelDB<br/>Port 3002]
+    end
 
-## Prerequisites
+    subgraph External Services
+        SUPA[(Supabase<br/>Auth + PostgreSQL)]
+        MONGO[(MongoDB Atlas)]
+    end
 
-Before running the backend services, ensure you have the following installed:
+    FE -->|HTTP REST| QN
+    FE -->|HTTP REST| USER
+    FE -->|WebSocket| MATCH
+    FE -->|WebSocket| COLLAB
 
-### For Windows Users:
+    QN -->|JWT Auth| SUPA
+    USER -->|Prisma ORM| SUPA
+    MATCH -->|User Points| SUPA
+    COLLAB -->|JWT Auth| SUPA
 
--   **Docker Desktop** - [Download here](https://www.docker.com/products/docker-desktop/)
-    -   Make sure Docker Desktop is running before executing any Docker commands
-    -   WSL 2 backend is recommended for better performance
+    QN -->|Questions + Attempts| MONGO
+    USER -->|User Profiles| SUPA
+    COLLAB -->|Document State| LDB[(LevelDB)]
 
-### For All Users:
-
--   **Node.js** (v16 or higher) - [Download here](https://nodejs.org/)
--   **npm** or **yarn** package manager
--   **Git** for version control
-
-## Getting Started
-
-Follow these steps to set up and run the backend services:
-
-### Step 1: Install Dependencies
-
-Navigate to each service directory and install dependencies:
-
-```bash
-# Install dependencies for matching service
-cd matching-service
-npm install
-cd ..
-
-# Install dependencies for collab service
-cd collab-service
-npm install
-cd ..
+    style FE fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
+    style QN fill:#e535ab,stroke:#333,stroke-width:2px
+    style USER fill:#e535ab,stroke:#333,stroke-width:2px
+    style MATCH fill:#e535ab,stroke:#333,stroke-width:2px
+    style COLLAB fill:#e535ab,stroke:#333,stroke-width:2px
+    style SUPA fill:#3ecf8e,stroke:#333,stroke-width:2px
+    style MONGO fill:#4db33d,stroke:#333,stroke-width:2px
 ```
 
-### Step 2: Configure Environment Variables
+### Component Interaction Flow
 
-Each service requires its own `.env` file for configuration.
+```mermaid
+sequenceDiagram
+    participant User as User (Browser)
+    participant Auth as User Service
+    participant Match as Matching Service
+    participant Collab as Collab Service
+    participant QN as Question Service
 
-#### Matching Service Configuration
+    User->>Auth: POST /auth/login
+    Auth->>User: JWT Token
 
-Create a `.env` file in `matching-service/` directory:
+    User->>Match: WebSocket connect + JWT
+    Match->>User: matched event (roomId)
 
-```bash
-cd matching-service
+    User->>Collab: WebSocket join(sessionId, JWT)
+    Collab->>User: collab:state (Yjs doc)
+
+    User->>QN: GET /questions?difficulty=medium
+    QN->>User: Question list
+
+    User->>Collab: collab:update (code changes)
+    Collab->>User: Broadcast to peers
+
+    User->>QN: POST /attempts (submit solution)
+    QN->>User: Attempt recorded
 ```
 
-Create `.env` with the following content:
+---
 
-```env
-NODE_ENV=development
-PORT=3000
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002
-SUPABASE_JWT_SECRET=your-supabase-jwt-secret-here
-```
+## Services
 
-#### Collaboration Service Configuration
+### Service Overview Table
 
-Create a `.env` file in `collab-service/` directory:
+| Service              | Port | Protocol  | Description                                    | Database   | Auth Method        |
+| -------------------- | ---- | --------- | ---------------------------------------------- | ---------- | ------------------ |
+| **Question Service** | 3000 | HTTP REST | Questions CRUD, search, filtering, attempts    | MongoDB    | Bearer JWT (HS256) |
+| **User Service**     | 4001 | HTTP REST | User profiles, authentication, authorization   | PostgreSQL | Bearer JWT (JWKS)  |
+| **Matching Service** | 3001 | WebSocket | Real-time peer matching by difficulty & topics | In-Memory  | JWT in handshake   |
+| **Collab Service**   | 3002 | WebSocket | Collaborative code editing with Yjs CRDTs      | LevelDB    | JWT in handshake   |
 
-```bash
-cd ../collab-service
-```
+---
 
-Create `.env` with the following content (you can also copy from `.env.example`):
+## Tech Stack
 
-```env
-NODE_ENV=development
-PORT=3000
-CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002
-COLLAB_SERVICE_PATH=/data/leveldb
-SUPABASE_JWT_SECRET=your-supabase-jwt-secret-here
-```
+### Core Technologies
 
-> **Note**: Replace `your-supabase-jwt-secret-here` with your actual Supabase JWT secret. You can find this in your Supabase project settings under API > JWT Secret.
+| Layer                | Technology                           |
+| -------------------- | ------------------------------------ |
+| **Framework**        | [NestJS](https://nestjs.com/) v10-11 |
+| **Runtime**          | Node.js 20 (Alpine in Docker)        |
+| **Language**         | TypeScript ^5.1-5.7                  |
+| **Package Manager**  | npm 9+                               |
+| **Containerization** | Docker + Docker Compose              |
 
-### Step 3: Build Docker Images
+### Service-Specific Stack
 
-Navigate back to the backend root directory and build the Docker images:
+#### Question Service
 
-```bash
-cd ..  # Make sure you're in the backend/ directory
-docker compose build
-```
+-   **Database**: MongoDB (Atlas) via native driver ^6.20
+-   **Auth**: jose ^6.1.0 (HS256 JWT verification)
+-   **ORM**: None (native MongoDB client)
 
-This command will:
+#### User Service
 
--   Build Docker images for both matching and collaboration services
--   Install all necessary dependencies inside the containers
--   Prepare the services for deployment
-
-> **Troubleshooting**: If you encounter build errors, ensure:
->
-> -   Docker Desktop is running
-> -   You have a stable internet connection (for downloading dependencies)
-> -   The `.env` files are properly created in each service directory
-
-### Step 4: Start the Services
-
-Start all services using Docker Compose:
-
-```bash
-docker compose up
-```
-
-Or run in detached mode (background):
-
-```bash
-docker compose up -d
-```
-
-This will:
-
--   Start the matching service on `http://localhost:3001`
--   Start the collaboration service on `http://localhost:3002`
--   Create a shared Docker network (`peerprep-net`) for inter-service communication
--   Mount the LevelDB volume for persistent collaboration data
-
-### Step 5: Verify Services are Running
-
-Check the status of running containers:
-
-```bash
-docker compose ps
-```
-
-You should see both `matching-service` and `collab-service` with status "Up".
-
-Check the logs to ensure services started correctly:
-
-```bash
-# View logs for all services
-docker compose logs
-
-# View logs for a specific service
-docker compose logs matching
-docker compose logs collab
-
-# Follow logs in real-time
-docker compose logs -f
-```
-
-## Service Endpoints
-
-Once running, the services are available at:
-
-| Service                    | URL                          | Description                                    |
-| -------------------------- | ---------------------------- | ---------------------------------------------- |
-| Matching Service           | http://localhost:3001        | WebSocket endpoint for user matching           |
-| Collaboration Service      | http://localhost:3002        | WebSocket endpoint for real-time collaboration |
-| Collaboration Health Check | http://localhost:3002/health | Health status endpoint                         |
-
-## Common Docker Commands
-
-### Starting Services
-
-```bash
-# Start all services
-docker compose up
-
-# Start in detached mode (background)
-docker compose up -d
-
-# Start specific service
-docker compose up matching
-```
-
-### Stopping Services
-
-```bash
-# Stop all services
-docker compose down
-
-# Stop and remove volumes
-docker compose down -v
-
-# Stop but keep containers
-docker compose stop
-```
-
-### Rebuilding After Changes
-
-```bash
-# Rebuild specific service
-docker compose build matching
-docker compose build collab
-
-# Rebuild and restart
-docker compose up --build
-```
-
-### Viewing Logs
-
-```bash
-# View all logs
-docker compose logs
-
-# View logs for specific service
-docker compose logs matching
-
-# Follow logs in real-time
-docker compose logs -f
-
-# View last 100 lines
-docker compose logs --tail=100
-```
-
-### Container Management
-
-```bash
-# List running containers
-docker compose ps
-
-# Execute command in running container
-docker compose exec matching sh
-docker compose exec collab sh
-
-# Restart a specific service
-docker compose restart matching
-```
-
-## Development Workflow
-
-### Running Services Locally (Without Docker)
-
-For faster development iteration, you can run services locally:
+-   **Database**: PostgreSQL (Supabase)
+-   **ORM**: Prisma ^6.19.0
+-   **Auth**: jose (JWKS verification from Supabase)
 
 #### Matching Service
 
-```bash
-cd matching-service
-npm run start:dev  # Runs on port 3000
-```
+-   **WebSocket**: Socket.IO ^4.8.1
+-   **Data Store**: In-memory (planned: Redis via ioredis ^5.8.1)
+-   **Auth**: jsonwebtoken ^9.0.2
+-   **External API**: Supabase (fetch user points)
 
 #### Collaboration Service
 
+-   **CRDT Engine**: Yjs ^13.6.27 + y-protocols ^1.0.6
+-   **WebSocket**: Socket.IO ^4.8.1
+-   **Persistence**: LevelDB (classic-level ^3.0.0)
+-   **Auth**: jsonwebtoken ^9.0.2
+
+### Shared Dependencies
+
+-   **Testing**: Jest ^29-30 + ts-jest
+-   **Linting**: ESLint ^8-9 + Prettier ^3.4
+-   **Dev Tools**: ts-node, tsx, nodemon equivalents
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+-   **Node.js** 20+ and **npm** 9+
+-   **Docker** and **Docker Compose** (for containerized setup)
+-   **MongoDB** connection string (for Question Service)
+-   **Supabase** project (for User Service + Auth)
+
+### Installation
+
 ```bash
+# Clone the repository
+git clone https://github.com/CS3219-AY2526Sem1/cs3219-ay2526s1-project-g36.git
+cd cs3219-ay2526s1-project-g36/backend
+
+# Install dependencies for all services
+cd qn-service && npm install && cd ..
+cd user-service && npm install && cd ..
+cd matching-service && npm install && cd ..
+cd collab-service && npm install && cd ..
+```
+
+### Running Individual Services (Development)
+
+```bash
+# Question Service
+cd qn-service
+npm run start:dev
+
+# User Service
+cd user-service
+npm run start:dev
+
+# Matching Service
+cd matching-service
+npm run start:dev
+
+# Collaboration Service
 cd collab-service
-npm run start:dev  # Runs on port 3000
+npm run start:dev
 ```
 
-> **Note**: When running locally, services use port 3000 by default. The Docker Compose setup maps them to 3001 and 3002 respectively.
+---
 
-### Testing the Services
+## Docker Setup
 
-Each service includes a test client for development:
+### Using Docker Compose (Recommended)
 
-#### Testing Collaboration Service
+Docker Compose orchestrates all four services with shared networking and volume mounts.
 
-1. Start the service (via Docker or locally)
-2. Open `collab-service/test-client/index.html` in your browser
-3. Use the test interface to connect and test WebSocket functionality
+```bash
+# From the backend/ directory
 
-#### Testing Matching Service
+# Build and start all services
+docker-compose up --build
 
-1. Start the service (via Docker or locally)
-2. Open `matching-service/test-client/index.html` in your browser
-3. Test the matching queue and pairing functionality
+# Start specific service
+docker-compose up qn
+docker-compose up user
+docker-compose up matching
+docker-compose up collab
 
-## Project Structure
+# Run in detached mode
+docker-compose up -d
 
-```
-backend/
-├── docker-compose.yml          # Docker orchestration configuration
-├── package.json                # Root-level dependencies
-├── README.md                   # This file
-│
-├── matching-service/           # Matching microservice
-│   ├── Dockerfile
-│   ├── src/
-│   │   ├── matching/           # Matching logic and gateway
-│   │   └── main.ts
-│   ├── test-client/            # Test interface
-│   └── .env                    # Environment variables (create this)
-│
-├── collab-service/             # Collaboration microservice
-│   ├── Dockerfile
-│   ├── src/
-│   │   ├── collab/             # Collaboration gateway and service
-│   │   ├── auth/               # JWT authentication
-│   │   └── main.ts
-│   ├── test-client/            # Test interface
-│   └── .env                    # Environment variables (create this)
-│
-├── collab-level-db/            # LevelDB persistent storage
-│
-└── api/                        # Main REST API service
-    ├── prisma/                 # Database schemas
-    ├── src/
-    │   ├── auth/
-    │   ├── profile/
-    │   ├── questions/
-    │   └── main.ts
-    └── docs/                   # API documentation
+# View logs
+docker-compose logs -f [service-name]
+
+# Stop all services
+docker-compose down
+
+# Rebuild without cache
+docker-compose build --no-cache
 ```
 
-## Troubleshooting
+### Service URLs (Docker)
 
-### Docker Desktop Not Running
+| Service  | Container Port | Host Port | URL                        |
+| -------- | -------------- | --------- | -------------------------- |
+| Question | 3000           | 3000      | http://localhost:3000      |
+| User     | 4001           | 4001      | http://localhost:4001      |
+| Matching | 3000           | 3001      | ws://localhost:3001        |
+| Collab   | 3000           | 3002      | ws://localhost:3002/collab |
 
-**Error**: `Cannot connect to the Docker daemon`  
-**Solution**: Start Docker Desktop and wait for it to fully initialize.
+### Network Configuration
 
-### Port Already in Use
+All services are connected via the `peerprep-net` Docker network, enabling inter-service communication by container name:
 
-**Error**: `port is already allocated`  
-**Solution**:
+```yaml
+networks:
+    default:
+        name: peerprep-net
+```
 
--   Stop any services using ports 3001 or 3002
--   Or modify the port mappings in `docker-compose.yml`
+### Volume Mounts
 
-### Build Failures
+-   **Collab Service**: LevelDB data persisted to `./collab-level-db:/data/leveldb`
 
-**Error**: Build fails during `npm install`  
-**Solution**:
+---
 
--   Delete `node_modules` in service directories
--   Run `docker compose build --no-cache`
--   Check your internet connection
+## Environment Variables
 
-### Environment Variables Not Loading
+### Common Variables
 
-**Error**: Service fails to start with config errors  
-**Solution**:
+All services share similar environment setup patterns:
 
--   Verify `.env` files exist in both service directories
--   Check that `.env` files are not empty
--   Ensure no extra spaces around `=` in `.env` files
+```bash
+# Server
+PORT=<service_port>
+NODE_ENV=development
 
-### Services Can't Communicate
+# CORS
+CORS_ORIGINS=http://localhost:3000,http://localhost:4000
 
-**Error**: Services can't connect to each other  
-**Solution**:
+# Supabase Auth
+SUPABASE_JWT_SECRET=your-supabase-jwt-secret
+SUPABASE_JWT_AUD=authenticated
+SUPABASE_ISS=https://your-project.supabase.co/auth/v1
+```
 
--   Ensure all services are on the same Docker network (`peerprep-net`)
--   Check `docker compose ps` to verify all services are running
--   Review CORS_ORIGINS configuration in `.env` files
+### Service-Specific Environment Files
 
-### LevelDB Lock Issues
+Each service requires a `.env` file in its directory:
 
-**Error**: `IO error: lock file already held`  
-**Solution**:
+#### Question Service (`qn-service/.env`)
 
--   Stop all containers: `docker compose down`
--   Remove the lock file: `rm collab-level-db/LOCK`
--   Restart: `docker compose up`
+```bash
+PORT=3000
+NODE_ENV=development
+CORS_ORIGINS=http://localhost:3000,http://localhost:4000
 
-## Additional Resources
+# MongoDB
+MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/?retryWrites=true&w=majority
+MONGODB_NAME=QuestionService
+MONGODB_COLLECTION=Questions
+ATTEMPTS_COLLECTION_NAME=QuestionAttempts
 
--   **NestJS Documentation**: https://docs.nestjs.com
--   **Socket.IO Documentation**: https://socket.io/docs/
--   **Docker Documentation**: https://docs.docker.com
--   **Docker Compose Documentation**: https://docs.docker.com/compose/
+# Supabase Auth (HS256)
+SUPABASE_JWT_SECRET=your_supabase_jwt_secret_here
+SUPABASE_JWT_AUD=authenticated
+SUPABASE_ISS=https://your-project.supabase.co/auth/v1
+```
 
-## Contributing
+#### User Service (`user-service/.env`)
 
-When contributing to the backend:
+```bash
+PORT=4001
+NODE_ENV=development
 
-1. Create a feature branch
-2. Make your changes
-3. Test locally using both Docker and local development mode
-4. Ensure all services build successfully
-5. Update this README if you add new services or configuration
-6. Submit a pull request
+# Supabase PostgreSQL
+DATABASE_URL=postgresql://user:pass@host:5432/database?schema=public
 
-## License
+# Supabase Auth (JWKS)
+SUPABASE_JWT_URL=https://YOUR_PROJECT.supabase.co/auth/v1/certs
+SUPABASE_JWT_AUD=authenticated
 
-This project is part of the CS3219 course project.
+# MongoDB (Optional)
+MONGODB_URI=mongodb+srv://...
+MONGODB_NAME=QuestionService
+MONGODB_COLLECTION=questions
+```
+
+#### Matching Service (`matching-service/.env`)
+
+```bash
+PORT=3000
+NODE_ENV=development
+
+# Supabase (Optional - for fetching user points)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-supabase-anon-key
+
+# Matching Algorithm
+BATCH_INTERVAL_MS=5000
+```
+
+#### Collaboration Service (`collab-service/.env`)
+
+```bash
+PORT=3002
+NODE_ENV=development
+
+# CORS
+CORS_ORIGINS=http://localhost:3000,http://localhost:4000
+
+# LevelDB Persistence
+COLLAB_SERVICE_PATH=/data/leveldb
+
+# Supabase Auth
+SUPABASE_JWT_SECRET=your-supabase-jwt-secret-here
+```
+
+### Environment Setup Checklist
+
+-   [ ] Create `.env` files in each service directory
+-   [ ] Set up Supabase project and copy JWT secrets/URLs
+-   [ ] Configure MongoDB Atlas cluster and copy connection string
+-   [ ] Ensure CORS_ORIGINS includes your frontend URL
+-   [ ] Run `npx prisma generate` in user-service after setting DATABASE_URL
+-   [ ] Verify LevelDB directory permissions for collab-service
+
+---
+
+## Development Workflow
+
+### Development Commands
+
+Each service supports standard NestJS scripts:
+
+```bash
+# Development (watch mode)
+npm run start:dev
+
+# Production build
+npm run build
+npm run start:prod
+
+# Debug mode
+npm run start:debug
+
+# Run tests
+npm run test
+npm run test:watch
+npm run test:cov
+npm run test:e2e
+
+# Linting & Formatting
+npm run lint
+npm run format
+```
+
+### Health Checks
+
+Each service exposes health endpoints:
+
+```bash
+# Question Service
+curl http://localhost:3000/health
+curl http://localhost:3000/healthz
+
+# User Service
+curl http://localhost:4001/health
+
+# Collab Service
+curl http://localhost:3002/health
+```
+
+### Testing Workflow
+
+```bash
+# Test all services
+./test-all.sh  # Create this script if needed
+
+# Or test individually
+cd qn-service && npm test
+cd user-service && npm test
+cd matching-service && npm test
+cd collab-service && npm test
+```
+
+### Database Management
+
+#### Question Service (MongoDB)
+
+```bash
+# Seed attempts
+export QN_TOKEN=<your-jwt-token>
+node qn-service/scripts/seed_attempts.js 100
+```
+
+#### User Service (Prisma + PostgreSQL)
+
+```bash
+cd user-service
+
+# Generate Prisma Client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+npx prisma migrate deploy  # Production
+
+# Open Prisma Studio (GUI)
+npx prisma studio
+```
+
+#### Collaboration Service (LevelDB)
+
+```bash
+# Data persists in ./collab-level-db/
+# Backup: Copy the directory
+# Clear: Delete the directory (service will recreate)
+```
+
+---
+
+## Service Documentation
+
+Detailed documentation for each service is available in their respective directories:
+
+| Service                   | Documentation                                              |
+| ------------------------- | ---------------------------------------------------------- |
+| **Question Service**      | [qn-service/README.md](./qn-service/README.md)             |
+| **User Service**          | [user-service/README.md](./user-service/README.md)         |
+| **Matching Service**      | [matching-service/README.md](./matching-service/README.md) |
+| **Collaboration Service** | [collab-service/README.md](./collab-service/README.md)     |
+
+### API Documentation
+
+#### Question Service REST API
+
+-   `GET /questions` - Paginated question list with filters (topic, difficulty, search)
+-   `GET /questions/:id` - Get question by ID
+-   `POST /attempts` - Record a question attempt
+-   `GET /attempts` - List attempts for authenticated user
+-   `GET /health` - Health check
+
+See [Question Service Query Guide](./qn-service/README.md#question-service--query-guide) for detailed query parameters.
+
+#### User Service REST API
+
+-   `POST /auth/signup` - Register new user
+-   `POST /auth/login` - Login and receive JWT
+-   `GET /profile` - Get authenticated user profile
+-   `PUT /profile` - Update user profile
+-   `GET /questions` - List questions (if colocated)
+
+See [User Service API](./user-service/docs/API.md) for detailed endpoint specs.
+
+#### Matching Service WebSocket API
+
+**Namespace:** `ws://localhost:3001/matching`
+
+-   `join-queue` - Enqueue for matching (userId, difficulty, topics)
+-   `match:cancel` - Cancel matching request
+-   `get-queue` - Get queue snapshot (debug)
+-   Server emits `matched` - Match found (roomId, matchedUserId)
+
+#### Collaboration Service WebSocket API
+
+**Namespace:** `ws://localhost:3002/collab`
+
+-   `collab:update` - Send Yjs document update
+-   `collab:awareness` - Send cursor/selection state
+-   `collab:language:set` - Set programming language
+-   `collab:history:get` - Get edit history
+-   `collab:revert` - Revert to specific timestamp
+-   Server emits `collab:state` - Full document state
+-   Server emits `collab:history:new` - New edit record
+
+---
+
+## Network & Ports
+
+### Port Summary
+
+| Service               | Development | Docker (Host) | Docker (Container) |
+| --------------------- | ----------- | ------------- | ------------------ |
+| Question Service      | 3000        | 3000          | 3000               |
+| User Service          | 4001        | 4001          | 4001               |
+| Matching Service      | 3000        | 3001          | 3000               |
+| Collaboration Service | 3002        | 3002          | 3000               |
+
+### CORS Configuration
+
+All services are configured to accept requests from the frontend:
+
+```typescript
+// Default CORS setup (can override via CORS_ORIGINS env)
+app.enableCors({
+    origin: ["http://localhost:3000", "http://localhost:4000"],
+    credentials: true,
+});
+```
+
+### Docker Network
+
+Services communicate within `peerprep-net`:
+
+```bash
+# Example: User Service calling Question Service
+http://qn:3000/questions
+```
+
+---
+
+## Contributors
+
+| Name           | Role                               | Services              |
+| -------------- | ---------------------------------- | --------------------- |
+| Zyon Wee       | Question Catalogue                 | Question Service      |
+| Jonathen Cheng | Auth & User Management             | User Service          |
+| David Vicedo   | Collaboration & Real-time Features | Collaboration Service |
+| Wong An Wei    | Matching & WebSocket Integration   | Matching Service      |
+
+---

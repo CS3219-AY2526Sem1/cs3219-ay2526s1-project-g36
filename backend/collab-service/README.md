@@ -7,6 +7,7 @@
 - [Development Notes](#development-notes)
 - [Testing / Linting](#testing--linting)
 - [Related Services](#related-services)
+- [Future Improvements](#future-improvements)
 - [Contributors](#contributors)
 
 # PeerPrep Collaboration Service
@@ -336,6 +337,12 @@ The Collaboration Service is part of the **PeerPrep** microservices architecture
 | **User Service**     | 4001 | User authentication and profiles       |
 
 All services communicate via HTTP/WebSocket and share Supabase JWT tokens for authentication.
+
+## Future Improvements
+
+- Move from LevelDB → Redis or MongoDB for distributed persistence
+- Add fine-grained access control (per-user document permissions)
+- Implement delta compression for long-lived sessions
 
 ## Contributors
 

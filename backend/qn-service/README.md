@@ -205,8 +205,7 @@ All services share Supabase JWT tokens for authentication where applicable.
 
 | Name         | Role                 |
 | ------------ | -------------------- |
-| David Vicedo | Lead Developer       |
-| Amos Chee    | Frontend Integration |
+| Zyon Wee     | Lead Developer       |
 
 
 # Question Service — Query Guide
