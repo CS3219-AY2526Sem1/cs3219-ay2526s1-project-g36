@@ -65,7 +65,7 @@ This log documents AI assistance used for the **Frontend (Next.js + React + Tail
 
 **Files Touched:**
 
-* `components/MonacoEditor.tsx`
+* `components/MonacoEditor.tsx` (later changed to `components/MonacoCollabTextArea.tsx`)
 * `pages/collab/[roomId].tsx`
 
 **Author Notes:**
